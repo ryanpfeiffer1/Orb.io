@@ -1,0 +1,25 @@
+{
+  "name": "orb-battle-io-server",
+  "version": "1.0.0",
+  "description": "Multiplayer WebSocket server for Orb Battle.io game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "game",
+    "multiplayer",
+    "websocket",
+    "socket.io"
+  ],
+  "license": "MIT"
+}

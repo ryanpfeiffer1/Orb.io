@@ -1,0 +1,3663 @@
+<!--
+MULTIPLAYER ORB BATTLE.IO - DEPLOYMENT INSTRUCTIONS
+
+This game requires a WebSocket server to enable multiplayer functionality.
+
+STEP 1: Deploy the Server
+1. Create a free account on Render.com, Railway.app, or Glitch.com
+2. Create a new Node.js project
+3. Copy the server.js and package.json files to your project
+4. Deploy the server and note the URL (e.g., https://your-game.onrender.com)
+
+STEP 2: Update the Game
+1. Find line ~50 in this file: const SERVER_URL = 'REPLACE_WITH_YOUR_SERVER_URL';
+2. Replace 'REPLACE_WITH_YOUR_SERVER_URL' with your server URL
+3. Save the file
+
+STEP 3: Embed in Google Sites
+1. Copy this entire HTML file
+2. In Google Sites: Insert > Embed
+3. Select "Embed code" tab
+4. Paste this code
+5. Click "Next" then "Insert"
+
+FALLBACK: If multiplayer fails, game runs in solo mode with bots only.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orb Battle.io - Multiplayer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1a1d2e;
+            --bg-secondary: #252836;
+            --bg-tertiary: #2d3142;
+            --accent-blue: #6c8eef;
+            --accent-green: #86efac;
+            --accent-orange: #fdba74;
+            --accent-purple: #a78bfa;
+            --accent-pink: #f472b6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #3d4156;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Lobby Screen */
+        #lobby {
+            text-align: center;
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        #lobby h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #lobby .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            text-align: left;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 142, 239, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-blue);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .join-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .join-row input {
+            flex: 1;
+        }
+
+        .join-row .btn {
+            width: auto;
+            margin-bottom: 0;
+        }
+
+        #player-list {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        #player-list h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        #player-list .room-code {
+            background: var(--bg-tertiary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        #players {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        #players li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #players li:last-child {
+            border-bottom: none;
+        }
+
+        .player-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Game Container */
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #gameCanvas {
+            display: block;
+            /* Size set via JS for crisp rendering */
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+
+        .hud-panel {
+            background: rgba(37, 40, 54, 0.9);
+            border-radius: 12px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+        }
+
+        #score-panel {
+            min-width: 180px;
+        }
+
+        #score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        #timer {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .progress-container {
+            margin-top: 0.75rem;
+        }
+
+        .progress-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        #leaderboard {
+            min-width: 200px;
+        }
+
+        #leaderboard h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        #top-players {
+            list-style: none;
+        }
+
+        #top-players li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            font-size: 0.85rem;
+        }
+
+        #top-players li .rank {
+            color: var(--text-secondary);
+            width: 1.5rem;
+        }
+
+        #top-players li .name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #top-players li .score {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        #top-players li.local-player {
+            color: var(--accent-orange);
+        }
+
+        #top-players li.local-player .score {
+            color: var(--accent-orange);
+        }
+
+        /* Session Reminder */
+        #session-reminder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(37, 40, 54, 0.98);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 320px;
+            border: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        #session-reminder h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-orange);
+        }
+
+        #session-reminder p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        #session-reminder .btn-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        #session-reminder .btn {
+            flex: 1;
+            margin-bottom: 0;
+            pointer-events: auto;
+        }
+
+        /* Post Game Screen */
+        #postgame {
+            text-align: center;
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        #postgame h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-green);
+        }
+
+        #stats {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            #hud {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .hud-panel {
+                width: 100%;
+            }
+
+            #leaderboard {
+                display: none;
+            }
+        }
+
+        /* Rift System Styles */
+        .rift-status {
+            margin-top: 0.75rem;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(244, 114, 182, 0.2));
+            border-radius: 8px;
+            border: 1px solid rgba(167, 139, 250, 0.4);
+            animation: riftPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes riftPulse {
+
+            0%,
+            100% {
+                border-color: rgba(167, 139, 250, 0.4);
+            }
+
+            50% {
+                border-color: rgba(244, 114, 182, 0.6);
+            }
+        }
+
+        .rift-timer {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        #dimension-name {
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        #dimension-timer {
+            color: var(--accent-pink);
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .rift-bonus {
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            margin-top: 0.25rem;
+        }
+
+        .rift-cooldown {
+            margin-top: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            background: rgba(253, 186, 116, 0.1);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cooldown-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        #cooldown-timer {
+            font-weight: 600;
+            color: var(--accent-orange);
+            font-family: monospace;
+        }
+
+        /* Screen flash effect */
+        .rift-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+            animation: riftFlash 0.5s ease-out forwards;
+        }
+
+        .rift-flash-enter {
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, rgba(167, 139, 250, 0) 70%);
+        }
+
+        .rift-flash-exit {
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.4) 0%, rgba(244, 114, 182, 0) 70%);
+        }
+
+        @keyframes riftFlash {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+
+        /* Invulnerability glow */
+        .invuln-indicator {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 1rem;
+            background: rgba(103, 232, 249, 0.2);
+            border: 1px solid var(--accent-blue);
+            border-radius: 20px;
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 0.85rem;
+            animation: invulnPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes invulnPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Lobby Screen -->
+    <div id="lobby">
+        <h1>Orb Battle.io</h1>
+        <p class="subtitle">Collect orbs. Grow bigger. Compete!</p>
+
+        <div class="input-group">
+            <label for="playerName">Your Name</label>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="12">
+        </div>
+
+        <div id="mode-selection">
+            <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+            <button class="btn btn-secondary" onclick="quickMatch()">Quick Match</button>
+
+            <div class="divider"><span>or join a room</span></div>
+
+            <div class="join-row">
+                <input type="text" id="roomCode" placeholder="Room Code" maxlength="8">
+                <button class="btn btn-secondary" onclick="joinRoom()">Join</button>
+            </div>
+
+            <div class="divider"><span>play offline</span></div>
+
+            <button class="btn btn-secondary" onclick="playSolo()">Play Solo (Bots Only)</button>
+        </div>
+
+        <div id="player-list" class="hidden">
+            <h3>Room Code</h3>
+            <div class="room-code" id="display-room-code">----</div>
+            <h3>Players</h3>
+            <ul id="players"></ul>
+            <button class="btn btn-primary" id="start-btn" onclick="startGame()">Start Game</button>
+            <button class="btn btn-secondary" onclick="leaveRoom()">Leave Room</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-container" class="hidden">
+        <div id="hud">
+            <div class="hud-panel" id="score-panel">
+                <div id="score">Score: 0</div>
+                <div id="timer">Time: 0:00</div>
+                <div class="progress-container">
+                    <div class="progress-label">Next milestone: <span id="points-needed">100</span> pts</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="rift-status" class="rift-status hidden">
+                    <div class="rift-timer">
+                        <span id="dimension-name">FEAST</span>
+                        <span id="dimension-timer">15s</span>
+                    </div>
+                    <div class="rift-bonus">BONUS: <span id="orb-multiplier">1.5x</span></div>
+                </div>
+                <div id="rift-cooldown" class="rift-cooldown hidden">
+                    <span class="cooldown-label">Rift Ready In</span>
+                    <span id="cooldown-timer">8s</span>
+                </div>
+            </div>
+            <div class="hud-panel" id="leaderboard">
+                <h4>Top Players</h4>
+                <ol id="top-players"></ol>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="invuln-indicator" class="invuln-indicator hidden">INVULNERABLE</div>
+
+        <div id="session-reminder" class="hidden">
+            <h3>Time for a Break?</h3>
+            <p>You've been playing for <span id="session-time">15</span> minutes. Consider taking a short break!</p>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="continueSession()">Continue</button>
+                <button class="btn btn-secondary" onclick="endSession()">Take Break</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Game Screen -->
+    <div id="postgame" class="hidden">
+        <h2>Game Complete!</h2>
+        <div id="stats">
+            <div class="stat-row">
+                <span class="stat-label">Final Score</span>
+                <span class="stat-value" id="final-score">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Orbs Collected</span>
+                <span class="stat-value" id="orbs-collected">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Players Absorbed</span>
+                <span class="stat-value" id="players-absorbed">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Final Rank</span>
+                <span class="stat-value" id="final-rank">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Game Duration</span>
+                <span class="stat-value" id="game-duration">0:00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Rifts Used</span>
+                <span class="stat-value" id="rifts-used">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Dimension Orbs</span>
+                <span class="stat-value" id="dimension-orbs">0</span>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+        <button class="btn btn-secondary" onclick="exitGame()">Exit to Lobby</button>
+    </div>
+
+    <!-- Socket.IO CDN -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+    <script>
+        // ========================================
+        // CONFIGURATION
+        // ========================================
+        const SERVER_URL = 'http://localhost:3000';
+        const GAME_DURATION = 5 * 60 * 1000; // 5 minutes
+        const BREAK_REMINDER_1 = 15 * 60 * 1000; // 15 minutes
+        const BREAK_REMINDER_2 = 30 * 60 * 1000; // 30 minutes
+
+        // ========================================
+        // MASS DECAY CONFIGURATION
+        // ========================================
+        const DECAY_CONFIG = {
+            baseRate: 0.02,           // Base decay per frame
+            sizeMultiplier: 2.5,      // Large players decay 2.5x faster
+            minSize: 15,              // Minimum size (can't decay below)
+            particleChance: 0.15      // Chance to spawn decay particle per frame
+        };
+
+        // ========================================
+        // ENVIRONMENTAL HAZARD CONFIGURATION
+        // ========================================
+        const PREDATOR_CONFIG = {
+            spawnThreshold: 50,       // Size needed to trigger spawn
+            sizeMultiplier: 1.8,      // Predator is 1.8x larger than target
+            speedMultiplier: 1.4,     // 40% faster than normal
+            duration: 30000,          // 30 seconds active
+            cooldown: 45000,          // 45 second cooldown
+            warningDuration: 3000     // 3 second warning before spawn
+        };
+
+        const DANGER_ZONE_CONFIG = {
+            spawnInterval: [45000, 60000],  // Random interval
+            warningDuration: 5000,          // 5 sec warning
+            activeDuration: 20000,          // 20 sec active
+            radius: 180,                    // Zone size
+            orbMultiplier: 4,               // 4x more orbs inside
+            shrinkRate: 0.002               // Shrink speed
+        };
+
+        const GAUNTLET_CONFIG = {
+            count: 3,                 // Number of gauntlets
+            width: 40,                // Passage width (only small players fit)
+            length: 300,              // Passage length
+            orbValue: 25,             // Higher value orbs (2.5x)
+            maxSizeToEnter: 35        // Maximum size to traverse
+        };
+
+        const METEOR_CONFIG = {
+            spawnInterval: [30000, 45000],
+            targetCount: 3,           // Targets top 3 largest
+            warningDuration: 2000,    // 2 sec to dodge
+            damageRadius: 60,
+            damagePercent: 0.35,      // 35% size loss
+            dodgeDistance: 100        // Pixels to escape
+        };
+
+        // ========================================
+        // ADDICTIVE ELEMENTS CONFIGURATION
+        // ========================================
+        const MILESTONE_CONFIG = [
+            { size: 30, name: "Growing!", bonus: 50, effect: 'pulse' },
+            { size: 50, name: "Getting Big!", bonus: 100, effect: 'flash' },
+            { size: 75, name: "DOMINATING!", bonus: 200, effect: 'glow' },
+            { size: 100, name: "MASSIVE!", bonus: 500, effect: 'crown' }
+        ];
+
+        const STREAK_CONFIG = {
+            window: 5000,             // 5 seconds to chain kills
+            bonuses: [
+                { kills: 2, name: "Double Kill!", multiplier: 1.25 },
+                { kills: 3, name: "Triple Kill!", multiplier: 1.5 },
+                { kills: 4, name: "MEGA KILL!", multiplier: 1.75 },
+                { kills: 5, name: "RAMPAGE!", multiplier: 2.0 }
+            ]
+        };
+
+        const RESPAWN_TIME = 1500;    // 1.5 second respawn (was 3000)
+
+        // ========================================
+        // DIMENSIONAL RIFT CONFIGURATION
+        // ========================================
+        const RIFT_CONFIG = {
+            count: 4,                    // Number of rifts in main world
+            radius: 35,                  // Visual/collision radius
+            cooldown: 8000,              // 8 seconds between rift uses
+            invulnDuration: 1500,        // 1.5 seconds invulnerability
+            minDimensionTime: 15000,     // 15 seconds minimum
+            maxDimensionTime: 30000      // 30 seconds maximum
+        };
+
+        // Pocket Dimension Configurations
+        const DIMENSION_CONFIGS = {
+            FEAST: {
+                name: 'Feast',
+                worldSize: 1000,
+                orbCount: 150,
+                speedMult: 1,
+                orbBonus: 1.5,
+                decayMult: 1.5,      // Faster decay to balance high orb count
+                color: '#86efac',
+                bots: 4,
+                description: 'High orb density'
+            },
+            ANTI_GRAVITY: {
+                name: 'Anti-Gravity',
+                worldSize: 1500,
+                orbCount: 80,
+                speedMult: 0.35,
+                orbBonus: 2.0,
+                decayMult: 0.5,      // Slower decay (floaty feel)
+                color: '#a78bfa',
+                bots: 2,
+                description: 'Slow & floaty'
+            },
+            MIRROR_MAZE: {
+                name: 'Mirror Maze',
+                worldSize: 800,
+                orbCount: 60,
+                speedMult: 1,
+                orbBonus: 1.75,
+                decayMult: 1.25,     // Moderate decay
+                color: '#f472b6',
+                bots: 2,
+                hasWalls: true,
+                description: 'Confined labyrinth'
+            },
+            SPEED: {
+                name: 'Speed Zone',
+                worldSize: 1200,
+                orbCount: 100,
+                speedMult: 2,
+                orbBonus: 1.5,
+                decayMult: 2.0,      // Fast decay matches speed theme
+                color: '#fdba74',
+                bots: 3,
+                description: 'Everything 2x faster'
+            }
+        };
+
+        const DIMENSION_TYPES = Object.keys(DIMENSION_CONFIGS);
+
+        // ========================================
+        // GAME STATE
+        // ========================================
+        let socket = null;
+        let isMultiplayer = false;
+        let isSoloMode = false;
+        let currentRoom = null;
+        let localPlayer = null;
+        let gameRunning = false;
+        let gameStartTime = 0;
+        let sessionStartTime = Date.now();
+        let breakReminderShown = { 15: false, 30: false };
+
+        // Game objects
+        let players = [];
+        let bots = [];
+        let orbs = [];
+
+        // Stats
+        let stats = {
+            score: 0,
+            orbsCollected: 0,
+            playersAbsorbed: 0
+        };
+
+        // Canvas
+        let canvas, ctx;
+        let canvasDPR = 1; // Device pixel ratio for crisp rendering
+        const WORLD_WIDTH = 2000;
+        const WORLD_HEIGHT = 2000;
+        let camera = { x: 0, y: 0 };
+
+        // Input
+        let mouseX = 0;
+        let mouseY = 0;
+        let keys = { w: false, a: false, s: false, d: false };
+
+        // Movement Physics
+        let playerVelocity = { x: 0, y: 0 };
+        const VELOCITY_LERP = 0.12;   // Smooth acceleration
+        const VELOCITY_DAMP = 0.88;   // Smooth deceleration
+
+        // Environmental Hazards State
+        let predator = null;
+        let predatorCooldown = 0;
+        let predatorWarning = null;
+        let dangerZone = null;
+        let dangerZoneTimer = 0;
+        let gauntlets = [];
+        let meteors = [];
+        let meteorTimer = 0;
+
+        // Addictive Elements State
+        let milestoneReached = [];
+        let killStreak = { count: 0, lastKillTime: 0 };
+        let notifications = [];
+        let screenShake = { intensity: 0, duration: 0 };
+
+        // Particles
+        let particles = [];
+
+        // Dimensional Rift State
+        let rifts = [];                          // Active rifts in main world
+        let currentDimension = null;             // null = main world, otherwise dimension type
+        let dimensionTimer = 0;                  // Time remaining in dimension (ms)
+        let riftCooldown = 0;                    // Cooldown timer (ms)
+        let isInvulnerable = false;              // Invulnerability state
+        let invulnTimer = 0;                     // Invulnerability timer (ms)
+        let mainWorldState = null;               // Saved main world state
+        let dimensionOrbs = [];                  // Orbs in current dimension
+        let dimensionBots = [];                  // Bots in current dimension
+        let mazeWalls = [];                      // Walls for Mirror Maze dimension
+
+        // Rift Statistics
+        let riftStats = {
+            riftsUsed: 0,
+            dimensionOrbs: 0,
+            feastVisits: 0,
+            antiGravVisits: 0,
+            mazeVisits: 0,
+            speedVisits: 0
+        };
+
+        // ========================================
+        // SOUND MANAGER (Web Audio API)
+        // ========================================
+        const SoundManager = {
+            ctx: null,
+            enabled: true,
+
+            init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio not supported');
+                    this.enabled = false;
+                }
+            },
+
+            resume() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            playTone(frequency, duration, type = 'sine', volume = 0.3) {
+                if (!this.enabled || !this.ctx) return;
+                this.resume();
+
+                const oscillator = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, this.ctx.currentTime);
+
+                gainNode.gain.setValueAtTime(volume, this.ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+                oscillator.start(this.ctx.currentTime);
+                oscillator.stop(this.ctx.currentTime + duration);
+            },
+
+            playDecay() {
+                this.playTone(200 + Math.random() * 100, 0.1, 'sine', 0.15);
+            },
+
+            playCollect() {
+                this.playTone(523, 0.1, 'sine', 0.2);
+                setTimeout(() => this.playTone(659, 0.1, 'sine', 0.2), 50);
+            },
+
+            playAbsorb() {
+                this.playTone(300, 0.3, 'sawtooth', 0.25);
+            },
+
+            playMilestone() {
+                this.playTone(523, 0.15, 'sine', 0.3);
+                setTimeout(() => this.playTone(659, 0.15, 'sine', 0.3), 100);
+                setTimeout(() => this.playTone(784, 0.2, 'sine', 0.3), 200);
+            },
+
+            playPredatorWarning() {
+                this.playTone(150, 0.5, 'sawtooth', 0.4);
+                setTimeout(() => this.playTone(100, 0.5, 'sawtooth', 0.4), 500);
+            },
+
+            playMeteorWarning() {
+                this.playTone(800, 0.1, 'square', 0.3);
+                setTimeout(() => this.playTone(800, 0.1, 'square', 0.3), 200);
+                setTimeout(() => this.playTone(800, 0.1, 'square', 0.3), 400);
+            },
+
+            playMeteorImpact() {
+                this.playTone(80, 0.4, 'sawtooth', 0.5);
+            },
+
+            playDeath() {
+                this.playTone(400, 0.2, 'sawtooth', 0.3);
+                setTimeout(() => this.playTone(300, 0.2, 'sawtooth', 0.3), 100);
+                setTimeout(() => this.playTone(200, 0.3, 'sawtooth', 0.3), 200);
+            },
+
+            playRespawn() {
+                this.playTone(300, 0.15, 'sine', 0.25);
+                setTimeout(() => this.playTone(400, 0.15, 'sine', 0.25), 100);
+                setTimeout(() => this.playTone(500, 0.2, 'sine', 0.25), 200);
+            },
+
+            playKillStreak(count) {
+                for (let i = 0; i < Math.min(count, 5); i++) {
+                    setTimeout(() => this.playTone(400 + i * 100, 0.15, 'sine', 0.3), i * 80);
+                }
+            }
+        };
+
+        // ========================================
+        // PARTICLE SYSTEM
+        // ========================================
+        function createParticle(x, y, options = {}) {
+            particles.push({
+                x, y,
+                vx: options.vx || (Math.random() - 0.5) * 4,
+                vy: options.vy || (Math.random() - 0.5) * 4,
+                size: options.size || 3 + Math.random() * 3,
+                color: options.color || '#86efac',
+                life: options.life || 1.0,
+                decay: options.decay || 0.02,
+                type: options.type || 'circle'
+            });
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                p.size *= 0.98;
+
+                if (p.life <= 0 || p.size < 0.5) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function renderParticles() {
+            particles.forEach(p => {
+                const screenX = p.x - camera.x;
+                const screenY = p.y - camera.y;
+
+                if (screenX > -50 && screenX < canvas.width + 50 &&
+                    screenY > -50 && screenY < canvas.height + 50) {
+                    ctx.globalAlpha = p.life;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            });
+        }
+
+        function spawnDecayParticles(entity, count = 1) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = entity.size * 0.8;
+                createParticle(
+                    entity.x + Math.cos(angle) * dist,
+                    entity.y + Math.sin(angle) * dist,
+                    {
+                        vx: Math.cos(angle) * (1 + Math.random()),
+                        vy: Math.sin(angle) * (1 + Math.random()),
+                        color: entity.color + 'aa',
+                        size: 2 + Math.random() * 2,
+                        life: 0.8,
+                        decay: 0.03
+                    }
+                );
+            }
+        }
+
+        function spawnExplosion(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const speed = 3 + Math.random() * 4;
+                createParticle(x, y, {
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: color,
+                    size: 4 + Math.random() * 4,
+                    life: 1.0,
+                    decay: 0.025
+                });
+            }
+        }
+
+        // ========================================
+        // NOTIFICATION SYSTEM
+        // ========================================
+        function showNotification(text, options = {}) {
+            notifications.push({
+                text,
+                x: options.x || canvas.width / 2,
+                y: options.y || canvas.height / 3,
+                color: options.color || '#fdba74',
+                size: options.size || 32,
+                life: 1.0,
+                decay: options.decay || 0.015,
+                vy: options.vy || -1
+            });
+        }
+
+        function updateNotifications() {
+            for (let i = notifications.length - 1; i >= 0; i--) {
+                const n = notifications[i];
+                n.y += n.vy;
+                n.life -= n.decay;
+                if (n.life <= 0) {
+                    notifications.splice(i, 1);
+                }
+            }
+        }
+
+        function renderNotifications() {
+            notifications.forEach(n => {
+                ctx.globalAlpha = n.life;
+                ctx.font = `bold ${n.size}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillStyle = n.color;
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(n.text, n.x, n.y);
+                ctx.fillText(n.text, n.x, n.y);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        // ========================================
+        // SCREEN SHAKE
+        // ========================================
+        function triggerScreenShake(intensity, duration) {
+            screenShake.intensity = Math.max(screenShake.intensity, intensity);
+            screenShake.duration = Math.max(screenShake.duration, duration);
+        }
+
+        function updateScreenShake() {
+            if (screenShake.duration > 0) {
+                screenShake.duration--;
+                screenShake.intensity *= 0.95;
+            } else {
+                screenShake.intensity = 0;
+            }
+        }
+
+        function getShakeOffset() {
+            if (screenShake.intensity > 0) {
+                return {
+                    x: (Math.random() - 0.5) * screenShake.intensity,
+                    y: (Math.random() - 0.5) * screenShake.intensity
+                };
+            }
+            return { x: 0, y: 0 };
+        }
+
+        // ========================================
+        // DIMENSIONAL RIFT SYSTEM
+        // ========================================
+        function createRifts() {
+            rifts = [];
+            const positions = [
+                { x: WORLD_WIDTH * 0.2, y: WORLD_HEIGHT * 0.2 },
+                { x: WORLD_WIDTH * 0.8, y: WORLD_HEIGHT * 0.2 },
+                { x: WORLD_WIDTH * 0.2, y: WORLD_HEIGHT * 0.8 },
+                { x: WORLD_WIDTH * 0.8, y: WORLD_HEIGHT * 0.8 }
+            ];
+
+            for (let i = 0; i < RIFT_CONFIG.count; i++) {
+                rifts.push({
+                    id: 'rift_' + i,
+                    x: positions[i].x + (Math.random() - 0.5) * 200,
+                    y: positions[i].y + (Math.random() - 0.5) * 200,
+                    dimensionType: DIMENSION_TYPES[i],
+                    pulsePhase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function checkRiftEntry() {
+            if (!localPlayer || !localPlayer.alive) return;
+            if (currentDimension !== null) return;  // Already in dimension
+            if (riftCooldown > 0) return;           // On cooldown
+
+            for (const rift of rifts) {
+                const dx = localPlayer.x - rift.x;
+                const dy = localPlayer.y - rift.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < RIFT_CONFIG.radius + localPlayer.size * 0.5) {
+                    enterDimension(rift.dimensionType);
+                    break;
+                }
+            }
+        }
+
+        function enterDimension(type) {
+            const config = DIMENSION_CONFIGS[type];
+
+            // Save main world state
+            mainWorldState = {
+                orbs: [...orbs],
+                bots: [...bots],
+                playerX: localPlayer.x,
+                playerY: localPlayer.y,
+                worldWidth: WORLD_WIDTH,
+                worldHeight: WORLD_HEIGHT
+            };
+
+            // Set dimension state
+            currentDimension = type;
+            dimensionTimer = RIFT_CONFIG.minDimensionTime +
+                Math.random() * (RIFT_CONFIG.maxDimensionTime - RIFT_CONFIG.minDimensionTime);
+            riftCooldown = RIFT_CONFIG.cooldown;
+
+            // Grant invulnerability
+            isInvulnerable = true;
+            invulnTimer = RIFT_CONFIG.invulnDuration;
+
+            // Initialize dimension
+            initDimension(type, config);
+
+            // Track stats
+            riftStats.riftsUsed++;
+            if (type === 'FEAST') riftStats.feastVisits++;
+            else if (type === 'ANTI_GRAVITY') riftStats.antiGravVisits++;
+            else if (type === 'MIRROR_MAZE') riftStats.mazeVisits++;
+            else if (type === 'SPEED') riftStats.speedVisits++;
+
+            // Visual/audio feedback
+            playRiftEffect('enter');
+            showNotification('ENTERING ' + config.name.toUpperCase() + '!', {
+                color: config.color,
+                size: 36
+            });
+
+            // Update HUD
+            updateRiftHUD();
+        }
+
+        function initDimension(type, config) {
+            const size = config.worldSize;
+
+            // Position player in center
+            localPlayer.x = size / 2;
+            localPlayer.y = size / 2;
+
+            // Create dimension orbs
+            dimensionOrbs = [];
+            for (let i = 0; i < config.orbCount; i++) {
+                dimensionOrbs.push({
+                    id: 'dim_orb_' + i,
+                    x: Math.random() * size,
+                    y: Math.random() * size,
+                    size: 8 + Math.random() * 6,
+                    color: config.color,
+                    bonus: config.orbBonus
+                });
+            }
+
+            // Create dimension bots
+            dimensionBots = [];
+            const botNames = ['Shadow', 'Phantom', 'Specter', 'Wraith', 'Ghost', 'Shade'];
+            for (let i = 0; i < config.bots; i++) {
+                dimensionBots.push({
+                    id: 'dim_bot_' + i,
+                    name: botNames[i % botNames.length],
+                    x: Math.random() * size,
+                    y: Math.random() * size,
+                    targetX: Math.random() * size,
+                    targetY: Math.random() * size,
+                    size: 18 + Math.random() * 15,
+                    color: config.color,
+                    score: 0,
+                    alive: true,
+                    isBot: true,
+                    changeTargetTime: Date.now() + Math.random() * 2000
+                });
+            }
+
+            // Create maze walls if Mirror Maze
+            mazeWalls = [];
+            if (config.hasWalls) {
+                createMazeWalls(size);
+            }
+        }
+
+        function createMazeWalls(size) {
+            const wallThickness = 15;
+            const passages = 4;
+            const spacing = size / (passages + 1);
+
+            // Horizontal walls
+            for (let i = 1; i <= passages; i++) {
+                const gapPos = Math.random() * 0.6 + 0.2; // Gap between 20-80% of width
+                mazeWalls.push({
+                    x: 0,
+                    y: spacing * i - wallThickness / 2,
+                    width: size * gapPos - 40,
+                    height: wallThickness
+                });
+                mazeWalls.push({
+                    x: size * gapPos + 40,
+                    y: spacing * i - wallThickness / 2,
+                    width: size * (1 - gapPos) - 40,
+                    height: wallThickness
+                });
+            }
+
+            // Vertical walls
+            for (let i = 1; i <= passages - 1; i++) {
+                const gapPos = Math.random() * 0.6 + 0.2;
+                mazeWalls.push({
+                    x: spacing * i - wallThickness / 2,
+                    y: 0,
+                    width: wallThickness,
+                    height: size * gapPos - 40
+                });
+                mazeWalls.push({
+                    x: spacing * i - wallThickness / 2,
+                    y: size * gapPos + 40,
+                    width: wallThickness,
+                    height: size * (1 - gapPos) - 40
+                });
+            }
+        }
+
+        function exitDimension(wasAbsorbed = false) {
+            if (!mainWorldState) return;
+
+            // Get the dimension name before clearing state
+            const exitedDimensionType = currentDimension;
+            const exitedConfig = DIMENSION_CONFIGS[exitedDimensionType];
+
+            // Choose random exit rift
+            const exitRift = rifts[Math.floor(Math.random() * rifts.length)];
+
+            // Restore main world state
+            orbs = mainWorldState.orbs;
+            bots = mainWorldState.bots;
+
+            // Position player at random rift
+            localPlayer.x = exitRift.x + (Math.random() - 0.5) * 100;
+            localPlayer.y = exitRift.y + (Math.random() - 0.5) * 100;
+
+            // If player died inside the dimension, respawn them
+            if (!localPlayer.alive) {
+                localPlayer.alive = true;
+                localPlayer.size = 20;
+                localPlayer.respawnTime = null;
+                SoundManager.playRespawn();
+            }
+
+            // Grant exit invulnerability
+            isInvulnerable = true;
+            invulnTimer = RIFT_CONFIG.invulnDuration;
+
+            // Set rift cooldown to prevent immediately re-entering a rift
+            riftCooldown = RIFT_CONFIG.cooldown;
+
+            // Clear dimension state
+            currentDimension = null;
+            mainWorldState = null;
+            dimensionOrbs = [];
+            dimensionBots = [];
+            mazeWalls = [];
+
+            // Visual/audio feedback
+            playRiftEffect('exit');
+
+            // Show single notification based on exit reason
+            if (wasAbsorbed) {
+                showNotification('💥 ABSORBED! Ejecting from ' + exitedConfig.name + '...', { color: '#fca5a5', size: 28 });
+            } else {
+                showNotification('EXITING ' + exitedConfig.name.toUpperCase() + '!', { color: exitedConfig.color, size: 28 });
+            }
+
+            // Update HUD
+            updateRiftHUD();
+        }
+
+        function updateDimensionTimers(deltaTime) {
+            // Update dimension timer
+            if (currentDimension !== null) {
+                dimensionTimer -= deltaTime;
+                if (dimensionTimer <= 0) {
+                    exitDimension();
+                }
+            }
+
+            // Update rift cooldown
+            if (riftCooldown > 0) {
+                riftCooldown -= deltaTime;
+                if (riftCooldown < 0) riftCooldown = 0;
+            }
+
+            // Update invulnerability
+            if (invulnTimer > 0) {
+                invulnTimer -= deltaTime;
+                if (invulnTimer <= 0) {
+                    isInvulnerable = false;
+                    invulnTimer = 0;
+                }
+            }
+        }
+
+        function getDimensionSpeedMultiplier() {
+            if (currentDimension === null) return 1;
+            return DIMENSION_CONFIGS[currentDimension].speedMult;
+        }
+
+        function getCurrentWorldSize() {
+            if (currentDimension === null) return { width: WORLD_WIDTH, height: WORLD_HEIGHT };
+            const size = DIMENSION_CONFIGS[currentDimension].worldSize;
+            return { width: size, height: size };
+        }
+
+        function playRiftEffect(type) {
+            // Create screen flash
+            const flash = document.createElement('div');
+            flash.className = 'rift-flash rift-flash-' + type;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+
+            // Play sound
+            if (type === 'enter') {
+                SoundManager.playTone(400, 0.3, 'sine', 0.4);
+                SoundManager.playTone(600, 0.2, 'sine', 0.3);
+                SoundManager.playTone(800, 0.15, 'sine', 0.2);
+            } else {
+                SoundManager.playTone(800, 0.2, 'sine', 0.4);
+                SoundManager.playTone(600, 0.25, 'sine', 0.3);
+                SoundManager.playTone(400, 0.3, 'sine', 0.2);
+            }
+
+            triggerScreenShake(8, 15);
+        }
+
+        function updateRiftHUD() {
+            const riftStatusEl = document.getElementById('rift-status');
+            const riftCooldownEl = document.getElementById('rift-cooldown');
+            const dimensionNameEl = document.getElementById('dimension-name');
+            const dimensionTimerEl = document.getElementById('dimension-timer');
+            const orbMultiplierEl = document.getElementById('orb-multiplier');
+            const cooldownTimerEl = document.getElementById('cooldown-timer');
+            const invulnIndicatorEl = document.getElementById('invuln-indicator');
+
+            if (currentDimension !== null) {
+                const config = DIMENSION_CONFIGS[currentDimension];
+                riftStatusEl.classList.remove('hidden');
+                dimensionNameEl.textContent = config.name;
+                dimensionTimerEl.textContent = Math.ceil(dimensionTimer / 1000) + 's';
+                orbMultiplierEl.textContent = config.orbBonus + 'x';
+
+                // Color based on time remaining
+                if (dimensionTimer < 5000) {
+                    dimensionTimerEl.style.color = '#fca5a5'; // Red when low
+                } else {
+                    dimensionTimerEl.style.color = '#f472b6';
+                }
+            } else {
+                riftStatusEl.classList.add('hidden');
+            }
+
+            if (riftCooldown > 0 && currentDimension === null) {
+                riftCooldownEl.classList.remove('hidden');
+                cooldownTimerEl.textContent = Math.ceil(riftCooldown / 1000) + 's';
+            } else {
+                riftCooldownEl.classList.add('hidden');
+            }
+
+            if (isInvulnerable) {
+                invulnIndicatorEl.classList.remove('hidden');
+            } else {
+                invulnIndicatorEl.classList.add('hidden');
+            }
+        }
+
+        function drawRifts() {
+            if (currentDimension !== null) return; // Don't draw rifts in dimensions
+
+            const time = Date.now() / 1000;
+
+            rifts.forEach(rift => {
+                const screenX = rift.x - camera.x;
+                const screenY = rift.y - camera.y;
+
+                if (screenX < -100 || screenX > canvas.width + 100 ||
+                    screenY < -100 || screenY > canvas.height + 100) return;
+
+                const config = DIMENSION_CONFIGS[rift.dimensionType];
+                const pulse = 0.8 + Math.sin(time * 3 + rift.pulsePhase) * 0.2;
+                const canEnter = riftCooldown <= 0;
+
+                // Outer glow
+                const gradient = ctx.createRadialGradient(
+                    screenX, screenY, RIFT_CONFIG.radius * 0.3 * pulse,
+                    screenX, screenY, RIFT_CONFIG.radius * 1.8 * pulse
+                );
+                gradient.addColorStop(0, config.color + (canEnter ? 'cc' : '66'));
+                gradient.addColorStop(0.5, config.color + (canEnter ? '66' : '33'));
+                gradient.addColorStop(1, config.color + '00');
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, RIFT_CONFIG.radius * 1.8 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Core with swirl effect
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.rotate(time * 2);
+
+                // Spiral lines
+                for (let i = 0; i < 6; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    const angle = (i / 6) * Math.PI * 2;
+                    const len = RIFT_CONFIG.radius * pulse;
+                    ctx.lineTo(Math.cos(angle) * len, Math.sin(angle) * len);
+                    ctx.strokeStyle = config.color + (canEnter ? 'cc' : '66');
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+
+                // Inner core
+                ctx.beginPath();
+                ctx.arc(0, 0, RIFT_CONFIG.radius * 0.4 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = config.color;
+                ctx.fill();
+
+                ctx.restore();
+
+                // Dimension label
+                ctx.font = '600 12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = canEnter ? config.color : '#666';
+                ctx.fillText(config.name, screenX, screenY + RIFT_CONFIG.radius + 25);
+
+                // Cooldown indicator on rift
+                if (!canEnter) {
+                    ctx.font = '500 10px Inter, sans-serif';
+                    ctx.fillStyle = '#fdba74';
+                    ctx.fillText('COOLDOWN', screenX, screenY + RIFT_CONFIG.radius + 38);
+                }
+            });
+        }
+
+        function drawDimensionBackground() {
+            if (currentDimension === null) return;
+
+            const config = DIMENSION_CONFIGS[currentDimension];
+            const time = Date.now() / 1000;
+
+            // Dimension-specific background
+            ctx.fillStyle = '#0d0d15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ambient color overlay
+            ctx.fillStyle = config.color + '15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Floating particles
+            for (let i = 0; i < 30; i++) {
+                const x = (Math.sin(time * 0.5 + i) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(time * 0.3 + i * 1.5) * 0.5 + 0.5) * canvas.height;
+                const size = 2 + Math.sin(time * 2 + i) * 1;
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = config.color + '44';
+                ctx.fill();
+            }
+
+            // Draw maze walls
+            if (config.hasWalls) {
+                drawMazeWalls();
+            }
+        }
+
+        function drawMazeWalls() {
+            ctx.fillStyle = '#f472b6aa';
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 2;
+
+            mazeWalls.forEach(wall => {
+                const screenX = wall.x - camera.x;
+                const screenY = wall.y - camera.y;
+
+                ctx.fillRect(screenX, screenY, wall.width, wall.height);
+                ctx.strokeRect(screenX, screenY, wall.width, wall.height);
+            });
+        }
+
+        function drawDimensionOrbs() {
+            dimensionOrbs.forEach(orb => {
+                const screenX = orb.x - camera.x;
+                const screenY = orb.y - camera.y;
+
+                if (screenX > -50 && screenX < canvas.width + 50 &&
+                    screenY > -50 && screenY < canvas.height + 50) {
+
+                    // Enhanced glow for dimension orbs
+                    const gradient = ctx.createRadialGradient(
+                        screenX, screenY, 0,
+                        screenX, screenY, orb.size * 2
+                    );
+                    gradient.addColorStop(0, orb.color + 'ff');
+                    gradient.addColorStop(0.5, orb.color + '66');
+                    gradient.addColorStop(1, orb.color + '00');
+
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, orb.size * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, orb.size, 0, Math.PI * 2);
+                    ctx.fillStyle = orb.color;
+                    ctx.fill();
+                }
+            });
+        }
+
+        function updateDimensionBots() {
+            if (currentDimension === null) return; // Safety check
+
+            const now = Date.now();
+            const config = DIMENSION_CONFIGS[currentDimension];
+            if (!config) return; // Safety check
+
+            const size = config.worldSize;
+            const speedMult = config.speedMult;
+
+            dimensionBots.forEach(bot => {
+                if (!bot.alive) return;
+
+                // Change target periodically
+                if (now > bot.changeTargetTime) {
+                    if (Math.random() < 0.7 && dimensionOrbs.length > 0) {
+                        const nearestOrb = dimensionOrbs.reduce((nearest, orb) => {
+                            const dx = orb.x - bot.x;
+                            const dy = orb.y - bot.y;
+                            const dist = dx * dx + dy * dy;
+                            if (!nearest || dist < nearest.dist) {
+                                return { orb, dist };
+                            }
+                            return nearest;
+                        }, null);
+
+                        if (nearestOrb) {
+                            bot.targetX = nearestOrb.orb.x;
+                            bot.targetY = nearestOrb.orb.y;
+                        }
+                    } else {
+                        bot.targetX = Math.random() * size;
+                        bot.targetY = Math.random() * size;
+                    }
+                    bot.changeTargetTime = now + 1000 + Math.random() * 2000;
+                }
+
+                // Move towards target
+                const speed = Math.max(1.5, 6 - bot.size * 0.04) * speedMult;
+                const dx = bot.targetX - bot.x;
+                const dy = bot.targetY - bot.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 5) {
+                    bot.x += (dx / dist) * speed;
+                    bot.y += (dy / dist) * speed;
+
+                    bot.x = Math.max(bot.size, Math.min(size - bot.size, bot.x));
+                    bot.y = Math.max(bot.size, Math.min(size - bot.size, bot.y));
+                }
+            });
+        }
+
+        function checkDimensionCollisions() {
+            if (!localPlayer || !localPlayer.alive) return;
+            if (currentDimension === null) return; // Safety check
+
+            const config = DIMENSION_CONFIGS[currentDimension];
+            if (!config) return; // Safety check for undefined config
+
+            // Check orb collection
+            for (let i = dimensionOrbs.length - 1; i >= 0; i--) {
+                const orb = dimensionOrbs[i];
+                const dx = localPlayer.x - orb.x;
+                const dy = localPlayer.y - orb.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < localPlayer.size) {
+                    // Collect with bonus
+                    const bonus = orb.bonus || 1;
+                    const points = Math.floor(10 * bonus);
+
+                    localPlayer.size += 1.5;
+                    localPlayer.score += points;
+                    stats.score += points;
+                    stats.orbsCollected++;
+                    riftStats.dimensionOrbs++;
+
+                    dimensionOrbs.splice(i, 1);
+
+                    // Respawn orb
+                    const size = config.worldSize;
+                    dimensionOrbs.push({
+                        id: 'dim_orb_' + Date.now(),
+                        x: Math.random() * size,
+                        y: Math.random() * size,
+                        size: 8 + Math.random() * 6,
+                        color: config.color,
+                        bonus: config.orbBonus
+                    });
+
+                    SoundManager.playCollect();
+                }
+            }
+
+            // Check bot collisions
+            // Player can always absorb bots, but can only BE absorbed if not invulnerable
+            dimensionBots.forEach(bot => {
+                if (!bot.alive) return;
+
+                const dx = localPlayer.x - bot.x;
+                const dy = localPlayer.y - bot.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < Math.max(localPlayer.size, bot.size) * 0.8) {
+                    if (localPlayer.size > bot.size * 1.1) {
+                        // Player absorbs bot (always allowed)
+                        bot.alive = false;
+                        localPlayer.size += bot.size * 0.3;
+                        localPlayer.score += 50;
+                        stats.score += 50;
+                        stats.playersAbsorbed++;
+                        SoundManager.playAbsorb(bot.size);
+                    } else if (bot.size > localPlayer.size * 1.1 && !isInvulnerable) {
+                        // Bot absorbs player - exit dimension early (only if not invulnerable)
+                        exitDimension(true); // Pass true to indicate absorbed
+                    }
+                }
+            });
+
+            // Check wall collisions for Mirror Maze
+            if (config.hasWalls) {
+                checkWallCollisions();
+            }
+        }
+
+        function checkWallCollisions() {
+            mazeWalls.forEach(wall => {
+                // Simple AABB collision
+                const playerLeft = localPlayer.x - localPlayer.size;
+                const playerRight = localPlayer.x + localPlayer.size;
+                const playerTop = localPlayer.y - localPlayer.size;
+                const playerBottom = localPlayer.y + localPlayer.size;
+
+                const wallLeft = wall.x;
+                const wallRight = wall.x + wall.width;
+                const wallTop = wall.y;
+                const wallBottom = wall.y + wall.height;
+
+                if (playerRight > wallLeft && playerLeft < wallRight &&
+                    playerBottom > wallTop && playerTop < wallBottom) {
+
+                    // Find closest edge and push out
+                    const overlapLeft = playerRight - wallLeft;
+                    const overlapRight = wallRight - playerLeft;
+                    const overlapTop = playerBottom - wallTop;
+                    const overlapBottom = wallBottom - playerTop;
+
+                    const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+
+                    if (minOverlap === overlapLeft) {
+                        localPlayer.x = wallLeft - localPlayer.size;
+                    } else if (minOverlap === overlapRight) {
+                        localPlayer.x = wallRight + localPlayer.size;
+                    } else if (minOverlap === overlapTop) {
+                        localPlayer.y = wallTop - localPlayer.size;
+                    } else {
+                        localPlayer.y = wallBottom + localPlayer.size;
+                    }
+                }
+            });
+        }
+
+        function resetRiftState() {
+            rifts = [];
+            currentDimension = null;
+            dimensionTimer = 0;
+            riftCooldown = 0;
+            isInvulnerable = false;
+            invulnTimer = 0;
+            mainWorldState = null;
+            dimensionOrbs = [];
+            dimensionBots = [];
+            mazeWalls = [];
+            riftStats = {
+                riftsUsed: 0,
+                dimensionOrbs: 0,
+                feastVisits: 0,
+                antiGravVisits: 0,
+                mazeVisits: 0,
+                speedVisits: 0
+            };
+        }
+
+        // ========================================
+        // DOM ELEMENTS
+        // ========================================
+        const lobbyEl = document.getElementById('lobby');
+        const gameContainerEl = document.getElementById('game-container');
+        const postgameEl = document.getElementById('postgame');
+        const modeSelectionEl = document.getElementById('mode-selection');
+        const playerListEl = document.getElementById('player-list');
+        const playersUl = document.getElementById('players');
+        const displayRoomCode = document.getElementById('display-room-code');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const topPlayersEl = document.getElementById('top-players');
+        const sessionReminderEl = document.getElementById('session-reminder');
+        const sessionTimeEl = document.getElementById('session-time');
+        const progressFillEl = document.getElementById('progress-fill');
+        const pointsNeededEl = document.getElementById('points-needed');
+
+        // ========================================
+        // SOCKET CONNECTION
+        // ========================================
+        function initSocket() {
+            if (SERVER_URL === 'REPLACE_WITH_YOUR_SERVER_URL') {
+                console.log('No server configured - solo mode only');
+                return false;
+            }
+
+            try {
+                socket = io(SERVER_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000,
+                    reconnection: true,
+                    reconnectionAttempts: 3
+                });
+
+                socket.on('connect', () => {
+                    console.log('Connected to server');
+                    isMultiplayer = true;
+                });
+
+                socket.on('connect_error', (err) => {
+                    console.log('Connection failed:', err.message);
+                    isMultiplayer = false;
+                });
+
+                socket.on('roomCreated', handleRoomCreated);
+                socket.on('roomJoined', handleRoomJoined);
+                socket.on('playerJoined', handlePlayerJoined);
+                socket.on('playerLeft', handlePlayerLeft);
+                socket.on('gameState', handleGameState);
+                socket.on('gameStarted', handleGameStarted);
+                socket.on('playerMoved', handlePlayerMoved);
+                socket.on('orbCollected', handleOrbCollected);
+                socket.on('playerAbsorbed', handlePlayerAbsorbed);
+                socket.on('gameEnded', handleGameEnded);
+                socket.on('error', handleError);
+
+                return true;
+            } catch (e) {
+                console.log('Socket init failed:', e);
+                return false;
+            }
+        }
+
+        // ========================================
+        // LOBBY FUNCTIONS
+        // ========================================
+        function getPlayerName() {
+            const name = document.getElementById('playerName').value.trim();
+            if (!name || name.length < 1) {
+                return 'Player' + Math.floor(Math.random() * 1000);
+            }
+            return name.substring(0, 12);
+        }
+
+        function createRoom() {
+            const name = getPlayerName();
+            if (!isMultiplayer) {
+                if (!initSocket()) {
+                    alert('Could not connect to server. Try Solo mode.');
+                    return;
+                }
+                setTimeout(() => {
+                    if (isMultiplayer) {
+                        socket.emit('createRoom', { playerName: name });
+                    } else {
+                        alert('Could not connect to server. Try Solo mode.');
+                    }
+                }, 1000);
+            } else {
+                socket.emit('createRoom', { playerName: name });
+            }
+        }
+
+        function quickMatch() {
+            const name = getPlayerName();
+            if (!isMultiplayer) {
+                if (!initSocket()) {
+                    alert('Could not connect to server. Try Solo mode.');
+                    return;
+                }
+                setTimeout(() => {
+                    if (isMultiplayer) {
+                        socket.emit('quickMatch', { playerName: name });
+                    } else {
+                        alert('Could not connect to server. Try Solo mode.');
+                    }
+                }, 1000);
+            } else {
+                socket.emit('quickMatch', { playerName: name });
+            }
+        }
+
+        function joinRoom() {
+            const name = getPlayerName();
+            const roomId = document.getElementById('roomCode').value.trim().toUpperCase();
+            if (!roomId) {
+                alert('Please enter a room code');
+                return;
+            }
+            if (!isMultiplayer) {
+                if (!initSocket()) {
+                    alert('Could not connect to server. Try Solo mode.');
+                    return;
+                }
+                setTimeout(() => {
+                    if (isMultiplayer) {
+                        socket.emit('joinRoom', { roomId, playerName: name });
+                    } else {
+                        alert('Could not connect to server. Try Solo mode.');
+                    }
+                }, 1000);
+            } else {
+                socket.emit('joinRoom', { roomId, playerName: name });
+            }
+        }
+
+        function playSolo() {
+            isSoloMode = true;
+            isMultiplayer = false;
+            const name = getPlayerName();
+            initSoloGame(name);
+        }
+
+        function leaveRoom() {
+            if (socket && currentRoom) {
+                socket.emit('leaveRoom', { roomId: currentRoom.id });
+            }
+            currentRoom = null;
+            modeSelectionEl.classList.remove('hidden');
+            playerListEl.classList.add('hidden');
+        }
+
+        function startGame() {
+            if (socket && currentRoom) {
+                socket.emit('startGame', { roomId: currentRoom.id });
+            }
+        }
+
+        // ========================================
+        // SOCKET HANDLERS
+        // ========================================
+        function handleRoomCreated(data) {
+            currentRoom = {
+                id: data.roomId,
+                players: data.players,
+                isHost: true
+            };
+            updateLobbyUI();
+        }
+
+        function handleRoomJoined(data) {
+            currentRoom = {
+                id: data.roomId,
+                players: data.players,
+                isHost: data.isHost
+            };
+            updateLobbyUI();
+        }
+
+        function handlePlayerJoined(data) {
+            if (currentRoom) {
+                currentRoom.players = data.players;
+                updatePlayerList();
+            }
+        }
+
+        function handlePlayerLeft(data) {
+            if (currentRoom) {
+                currentRoom.players = data.players;
+                currentRoom.isHost = data.newHostId === socket.id;
+                updatePlayerList();
+            }
+        }
+
+        function handleGameState(data) {
+            players = data.players;
+            bots = data.bots || [];
+            orbs = data.orbs;
+            localPlayer = players.find(p => p.id === socket.id);
+        }
+
+        function handleGameStarted(data) {
+            players = data.players;
+            bots = data.bots || [];
+            orbs = data.orbs;
+            localPlayer = players.find(p => p.id === socket.id);
+            startGameLoop();
+        }
+
+        function handlePlayerMoved(data) {
+            const player = players.find(p => p.id === data.playerId);
+            if (player && player.id !== socket.id) {
+                player.targetX = data.x;
+                player.targetY = data.y;
+            }
+        }
+
+        function handleOrbCollected(data) {
+            orbs = orbs.filter(o => o.id !== data.orbId);
+            if (data.newOrb) {
+                orbs.push(data.newOrb);
+            }
+            const player = players.find(p => p.id === data.playerId);
+            if (player) {
+                player.size = data.newSize;
+                player.score = data.newScore;
+                if (player.id === socket.id) {
+                    stats.score = data.newScore;
+                    stats.orbsCollected++;
+                }
+            }
+        }
+
+        function handlePlayerAbsorbed(data) {
+            const absorbed = players.find(p => p.id === data.absorbedId);
+            const absorber = players.find(p => p.id === data.absorberId);
+
+            if (absorbed) {
+                absorbed.alive = false;
+                absorbed.respawnTime = Date.now() + 3000;
+            }
+            if (absorber) {
+                absorber.size = data.newSize;
+                absorber.score = data.newScore;
+                if (absorber.id === socket.id) {
+                    stats.score = data.newScore;
+                    stats.playersAbsorbed++;
+                }
+            }
+        }
+
+        function handleGameEnded(data) {
+            gameRunning = false;
+            showPostGame(data);
+        }
+
+        function handleError(data) {
+            alert(data.message);
+        }
+
+        function updateLobbyUI() {
+            modeSelectionEl.classList.add('hidden');
+            playerListEl.classList.remove('hidden');
+            displayRoomCode.textContent = currentRoom.id;
+            updatePlayerList();
+        }
+
+        function updatePlayerList() {
+            playersUl.innerHTML = '';
+            currentRoom.players.forEach(player => {
+                const li = document.createElement('li');
+                const dot = document.createElement('span');
+                dot.className = 'player-dot';
+                dot.style.background = player.color;
+                li.appendChild(dot);
+                li.appendChild(document.createTextNode(player.name + (player.id === socket.id ? ' (you)' : '')));
+                playersUl.appendChild(li);
+            });
+            startBtn.style.display = currentRoom.isHost ? 'block' : 'none';
+        }
+
+        // ========================================
+        // SOLO MODE
+        // ========================================
+        function initSoloGame(playerName) {
+            // Reset rift state from any previous game
+            resetRiftState();
+
+            // Create local player
+            localPlayer = {
+                id: 'local',
+                name: playerName,
+                x: WORLD_WIDTH / 2,
+                y: WORLD_HEIGHT / 2,
+                size: 20,
+                color: getRandomColor(),
+                score: 0,
+                alive: true
+            };
+            players = [localPlayer];
+
+            // Create bots
+            bots = [];
+            for (let i = 0; i < 8; i++) {
+                bots.push(createBot(i));
+            }
+
+            // Create orbs
+            orbs = [];
+            for (let i = 0; i < 100; i++) {
+                orbs.push(createOrb(i));
+            }
+
+            // Create dimensional rifts
+            createRifts();
+
+            startGameLoop();
+        }
+
+        function createBot(index) {
+            const botNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'];
+            return {
+                id: 'bot_' + index,
+                name: botNames[index] || 'Bot',
+                x: Math.random() * WORLD_WIDTH,
+                y: Math.random() * WORLD_HEIGHT,
+                targetX: Math.random() * WORLD_WIDTH,
+                targetY: Math.random() * WORLD_HEIGHT,
+                size: 15 + Math.random() * 20,
+                color: getRandomColor(),
+                score: 0,
+                alive: true,
+                isBot: true,
+                changeTargetTime: Date.now() + Math.random() * 3000
+            };
+        }
+
+        function createOrb(index) {
+            return {
+                id: 'orb_' + index + '_' + Date.now(),
+                x: Math.random() * WORLD_WIDTH,
+                y: Math.random() * WORLD_HEIGHT,
+                size: 8 + Math.random() * 6,
+                color: getRandomOrbColor()
+            };
+        }
+
+        function getRandomColor() {
+            const colors = ['#6c8eef', '#86efac', '#fdba74', '#a78bfa', '#f472b6', '#67e8f9', '#fca5a5'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function getRandomOrbColor() {
+            const colors = ['#86efac', '#fdba74', '#67e8f9', '#fca5a5', '#d8b4fe'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // ========================================
+        // MASS DECAY SYSTEM
+        // ========================================
+        function applyMassDecay(entity) {
+            if (entity.size <= DECAY_CONFIG.minSize) return;
+
+            const sizeRatio = entity.size / DECAY_CONFIG.minSize;
+            const decayRate = DECAY_CONFIG.baseRate * (1 + (sizeRatio - 1) * DECAY_CONFIG.sizeMultiplier);
+
+            entity.size -= decayRate;
+            entity.size = Math.max(DECAY_CONFIG.minSize, entity.size);
+
+            // Spawn decay particles with satisfying effect
+            if (Math.random() < DECAY_CONFIG.particleChance && entity.size > 20) {
+                spawnDecayParticles(entity, 1);
+                if (entity.id === localPlayer.id && Math.random() < 0.1) {
+                    SoundManager.playDecay();
+                }
+            }
+        }
+
+        // ========================================
+        // GAUNTLET PASSAGES
+        // ========================================
+        function initGauntlets() {
+            gauntlets = [];
+            const positions = [
+                { x: 400, y: 500, horizontal: true },
+                { x: 1600, y: 800, horizontal: false },
+                { x: 1000, y: 1500, horizontal: true }
+            ];
+
+            positions.forEach((pos, i) => {
+                gauntlets.push({
+                    id: 'gauntlet_' + i,
+                    x: pos.x,
+                    y: pos.y,
+                    horizontal: pos.horizontal,
+                    width: GAUNTLET_CONFIG.width,
+                    length: GAUNTLET_CONFIG.length,
+                    orbs: []
+                });
+
+                // Add high-value orbs inside gauntlet
+                for (let j = 0; j < 5; j++) {
+                    const orbX = pos.horizontal ?
+                        pos.x + (j + 1) * (GAUNTLET_CONFIG.length / 6) :
+                        pos.x;
+                    const orbY = pos.horizontal ?
+                        pos.y :
+                        pos.y + (j + 1) * (GAUNTLET_CONFIG.length / 6);
+
+                    orbs.push({
+                        id: 'gauntlet_orb_' + i + '_' + j,
+                        x: orbX,
+                        y: orbY,
+                        size: 12,
+                        color: '#ffd700', // Gold color for high-value
+                        value: GAUNTLET_CONFIG.orbValue,
+                        isGauntletOrb: true
+                    });
+                }
+            });
+        }
+
+        function renderGauntlets() {
+            gauntlets.forEach(g => {
+                const screenX = g.x - camera.x;
+                const screenY = g.y - camera.y;
+
+                // Only render if visible
+                if (screenX < -g.length && screenX > canvas.width + g.length) return;
+                if (screenY < -g.length && screenY > canvas.height + g.length) return;
+
+                ctx.save();
+
+                // Draw glowing walls
+                const gradient = ctx.createLinearGradient(
+                    screenX, screenY,
+                    g.horizontal ? screenX : screenX + g.width,
+                    g.horizontal ? screenY + g.width : screenY
+                );
+                gradient.addColorStop(0, '#a78bfa44');
+                gradient.addColorStop(0.5, '#a78bfa88');
+                gradient.addColorStop(1, '#a78bfa44');
+
+                ctx.strokeStyle = '#a78bfa';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#a78bfa';
+                ctx.shadowBlur = 15;
+
+                if (g.horizontal) {
+                    // Top wall
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, screenY - g.width / 2);
+                    ctx.lineTo(screenX + g.length, screenY - g.width / 2);
+                    ctx.stroke();
+
+                    // Bottom wall
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, screenY + g.width / 2);
+                    ctx.lineTo(screenX + g.length, screenY + g.width / 2);
+                    ctx.stroke();
+                } else {
+                    // Left wall
+                    ctx.beginPath();
+                    ctx.moveTo(screenX - g.width / 2, screenY);
+                    ctx.lineTo(screenX - g.width / 2, screenY + g.length);
+                    ctx.stroke();
+
+                    // Right wall
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + g.width / 2, screenY);
+                    ctx.lineTo(screenX + g.width / 2, screenY + g.length);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+        }
+
+        function isInGauntlet(entity) {
+            for (const g of gauntlets) {
+                if (g.horizontal) {
+                    if (entity.x >= g.x && entity.x <= g.x + g.length &&
+                        Math.abs(entity.y - g.y) < g.width / 2 + entity.size) {
+                        return entity.size <= GAUNTLET_CONFIG.maxSizeToEnter;
+                    }
+                } else {
+                    if (entity.y >= g.y && entity.y <= g.y + g.length &&
+                        Math.abs(entity.x - g.x) < g.width / 2 + entity.size) {
+                        return entity.size <= GAUNTLET_CONFIG.maxSizeToEnter;
+                    }
+                }
+            }
+            return true; // Not in gauntlet, so no restriction
+        }
+
+        // ========================================
+        // PREDATOR NPC SYSTEM
+        // ========================================
+        function updatePredator() {
+            const now = Date.now();
+
+            // Check if we should spawn a predator
+            if (!predator && !predatorWarning && now > predatorCooldown) {
+                const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+                const largest = allEntities.sort((a, b) => b.size - a.size)[0];
+
+                if (largest && largest.size >= PREDATOR_CONFIG.spawnThreshold) {
+                    // Start warning phase
+                    predatorWarning = {
+                        target: largest,
+                        startTime: now,
+                        x: largest.x + (Math.random() - 0.5) * 400,
+                        y: largest.y + (Math.random() - 0.5) * 400
+                    };
+                    SoundManager.playPredatorWarning();
+                    showNotification('⚠️ HUNTER INCOMING!', { color: '#ef4444', size: 40 });
+                    triggerScreenShake(8, 30);
+                }
+            }
+
+            // Spawn predator after warning
+            if (predatorWarning && now - predatorWarning.startTime >= PREDATOR_CONFIG.warningDuration) {
+                predator = {
+                    id: 'predator_' + now,
+                    name: '☠️ HUNTER',
+                    x: predatorWarning.x,
+                    y: predatorWarning.y,
+                    size: predatorWarning.target.size * PREDATOR_CONFIG.sizeMultiplier,
+                    color: '#dc2626',
+                    score: 0,
+                    alive: true,
+                    isPredator: true,
+                    spawnTime: now,
+                    target: predatorWarning.target
+                };
+                predatorWarning = null;
+                showNotification('🔴 HUNTER SPAWNED!', { color: '#dc2626', size: 44 });
+            }
+
+            // Update predator movement
+            if (predator && predator.alive) {
+                // Check if duration expired
+                if (now - predator.spawnTime > PREDATOR_CONFIG.duration) {
+                    // Despawn with explosion
+                    spawnExplosion(predator.x, predator.y, '#dc2626', 30);
+                    showNotification('Hunter Retreated', { color: '#86efac' });
+                    predator = null;
+                    predatorCooldown = now + PREDATOR_CONFIG.cooldown;
+                    return;
+                }
+
+                // Find largest player to chase
+                const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+                const target = allEntities.sort((a, b) => b.size - a.size)[0];
+
+                if (target) {
+                    const speed = (Math.max(1.5, 6 - predator.size * 0.02)) * PREDATOR_CONFIG.speedMultiplier;
+                    const dx = target.x - predator.x;
+                    const dy = target.y - predator.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 5) {
+                        predator.x += (dx / dist) * speed;
+                        predator.y += (dy / dist) * speed;
+
+                        predator.x = Math.max(predator.size, Math.min(WORLD_WIDTH - predator.size, predator.x));
+                        predator.y = Math.max(predator.size, Math.min(WORLD_HEIGHT - predator.size, predator.y));
+                    }
+                }
+            }
+        }
+
+        function renderPredator() {
+            if (predatorWarning) {
+                // Render warning indicator
+                const screenX = predatorWarning.x - camera.x;
+                const screenY = predatorWarning.y - camera.y;
+                const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, 60, 0, Math.PI * 2);
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([10, 10]);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            if (predator && predator.alive) {
+                const screenX = predator.x - camera.x;
+                const screenY = predator.y - camera.y;
+                const pulse = Math.sin(Date.now() * 0.008) * 0.2 + 0.8;
+
+                // Pulsing red glow
+                const gradient = ctx.createRadialGradient(
+                    screenX, screenY, predator.size * 0.3,
+                    screenX, screenY, predator.size * 1.8
+                );
+                gradient.addColorStop(0, `rgba(220, 38, 38, ${pulse * 0.6})`);
+                gradient.addColorStop(1, 'rgba(220, 38, 38, 0)');
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, predator.size * 1.8, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Main predator body
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, predator.size, 0, Math.PI * 2);
+                ctx.fillStyle = predator.color;
+                ctx.fill();
+
+                // Evil eye effect
+                ctx.beginPath();
+                ctx.arc(screenX, screenY - predator.size * 0.1, predator.size * 0.25, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(screenX, screenY - predator.size * 0.1, predator.size * 0.12, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+
+                // Name
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#dc2626';
+                ctx.fillText(predator.name, screenX, screenY + predator.size + 20);
+
+                // Timer bar
+                const timeLeft = 1 - (Date.now() - predator.spawnTime) / PREDATOR_CONFIG.duration;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(screenX - 30, screenY + predator.size + 30, 60, 6);
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(screenX - 30, screenY + predator.size + 30, 60 * timeLeft, 6);
+            }
+        }
+
+        // ========================================
+        // DANGER ZONES
+        // ========================================
+        function updateDangerZone() {
+            const now = Date.now();
+
+            if (!dangerZone && now > dangerZoneTimer) {
+                // Spawn new danger zone
+                dangerZone = {
+                    x: 200 + Math.random() * (WORLD_WIDTH - 400),
+                    y: 200 + Math.random() * (WORLD_HEIGHT - 400),
+                    radius: DANGER_ZONE_CONFIG.radius,
+                    startTime: now,
+                    phase: 'warning', // warning, active
+                    orbs: []
+                };
+                showNotification('⚡ DANGER ZONE FORMING!', { color: '#f59e0b', size: 36 });
+            }
+
+            if (dangerZone) {
+                const elapsed = now - dangerZone.startTime;
+
+                if (dangerZone.phase === 'warning' && elapsed >= DANGER_ZONE_CONFIG.warningDuration) {
+                    // Activate zone
+                    dangerZone.phase = 'active';
+                    dangerZone.activateTime = now;
+
+                    // Spawn bonus orbs
+                    for (let i = 0; i < 15; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = Math.random() * dangerZone.radius * 0.8;
+                        orbs.push({
+                            id: 'danger_orb_' + i + '_' + now,
+                            x: dangerZone.x + Math.cos(angle) * dist,
+                            y: dangerZone.y + Math.sin(angle) * dist,
+                            size: 10 + Math.random() * 8,
+                            color: '#f59e0b',
+                            value: 20,
+                            isDangerOrb: true
+                        });
+                    }
+                    showNotification('💰 DANGER ZONE ACTIVE!', { color: '#22c55e', size: 32 });
+                }
+
+                if (dangerZone.phase === 'active') {
+                    const activeElapsed = now - dangerZone.activateTime;
+
+                    // Shrink the zone
+                    dangerZone.radius = DANGER_ZONE_CONFIG.radius * (1 - activeElapsed / DANGER_ZONE_CONFIG.activeDuration);
+
+                    if (activeElapsed >= DANGER_ZONE_CONFIG.activeDuration) {
+                        // Zone expired
+                        dangerZone = null;
+                        const interval = DANGER_ZONE_CONFIG.spawnInterval;
+                        dangerZoneTimer = now + interval[0] + Math.random() * (interval[1] - interval[0]);
+                    }
+                }
+            }
+        }
+
+        function renderDangerZone() {
+            if (!dangerZone) return;
+
+            const screenX = dangerZone.x - camera.x;
+            const screenY = dangerZone.y - camera.y;
+            const pulse = Math.sin(Date.now() * 0.005) * 0.2 + 0.8;
+
+            ctx.save();
+
+            if (dangerZone.phase === 'warning') {
+                // Flashing warning circle
+                ctx.globalAlpha = pulse * 0.5;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, dangerZone.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([15, 15]);
+                ctx.stroke();
+            } else {
+                // Active zone with gradient
+                const gradient = ctx.createRadialGradient(
+                    screenX, screenY, 0,
+                    screenX, screenY, dangerZone.radius
+                );
+                gradient.addColorStop(0, 'rgba(245, 158, 11, 0.1)');
+                gradient.addColorStop(0.7, 'rgba(245, 158, 11, 0.2)');
+                gradient.addColorStop(1, 'rgba(245, 158, 11, 0.4)');
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, dangerZone.radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // ========================================
+        // METEOR SHOWERS
+        // ========================================
+        function updateMeteors() {
+            const now = Date.now();
+
+            // Spawn new meteor wave
+            if (meteors.length === 0 && now > meteorTimer) {
+                const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+                const targets = allEntities.sort((a, b) => b.size - a.size).slice(0, METEOR_CONFIG.targetCount);
+
+                if (targets.length > 0 && targets[0].size > 30) {
+                    targets.forEach(target => {
+                        meteors.push({
+                            targetX: target.x,
+                            targetY: target.y,
+                            targetId: target.id,
+                            spawnTime: now,
+                            phase: 'warning'
+                        });
+                    });
+                    SoundManager.playMeteorWarning();
+                    showNotification('☄️ METEOR INCOMING!', { color: '#ef4444', size: 36 });
+                }
+            }
+
+            // Update meteors
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const m = meteors[i];
+                const elapsed = now - m.spawnTime;
+
+                if (m.phase === 'warning' && elapsed >= METEOR_CONFIG.warningDuration) {
+                    m.phase = 'impact';
+
+                    // Check for hits
+                    const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+                    allEntities.forEach(entity => {
+                        const dx = entity.x - m.targetX;
+                        const dy = entity.y - m.targetY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < METEOR_CONFIG.damageRadius) {
+                            // Direct hit!
+                            const damage = entity.size * METEOR_CONFIG.damagePercent;
+                            entity.size = Math.max(DECAY_CONFIG.minSize, entity.size - damage);
+
+                            if (entity.id === localPlayer.id) {
+                                triggerScreenShake(20, 40);
+                                showNotification('💥 METEOR HIT!', { color: '#ef4444' });
+                            }
+                        }
+                    });
+
+                    // Visual impact
+                    spawnExplosion(m.targetX, m.targetY, '#f97316', 25);
+                    SoundManager.playMeteorImpact();
+                    triggerScreenShake(10, 20);
+                }
+
+                if (m.phase === 'impact') {
+                    meteors.splice(i, 1);
+                }
+            }
+
+            // Reset timer when all meteors cleared
+            if (meteors.length === 0 && meteorTimer < now) {
+                const interval = METEOR_CONFIG.spawnInterval;
+                meteorTimer = now + interval[0] + Math.random() * (interval[1] - interval[0]);
+            }
+        }
+
+        function renderMeteors() {
+            meteors.forEach(m => {
+                if (m.phase !== 'warning') return;
+
+                const screenX = m.targetX - camera.x;
+                const screenY = m.targetY - camera.y;
+                const elapsed = Date.now() - m.spawnTime;
+                const progress = elapsed / METEOR_CONFIG.warningDuration;
+                const pulse = Math.sin(Date.now() * 0.02) * 0.3 + 0.7;
+
+                ctx.save();
+
+                // Target circle that shrinks
+                ctx.globalAlpha = pulse;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, METEOR_CONFIG.damageRadius * (2 - progress), 0, Math.PI * 2);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Inner danger zone
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, METEOR_CONFIG.damageRadius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(239, 68, 68, ${0.2 + progress * 0.3})`;
+                ctx.fill();
+
+                // Crosshair
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(screenX - 20, screenY);
+                ctx.lineTo(screenX + 20, screenY);
+                ctx.moveTo(screenX, screenY - 20);
+                ctx.lineTo(screenX, screenY + 20);
+                ctx.stroke();
+
+                ctx.restore();
+            });
+        }
+
+        // ========================================
+        // MILESTONE SYSTEM
+        // ========================================
+        function checkMilestones(entity) {
+            if (entity.id !== localPlayer.id) return;
+
+            MILESTONE_CONFIG.forEach(milestone => {
+                if (!milestoneReached.includes(milestone.size) && entity.size >= milestone.size) {
+                    milestoneReached.push(milestone.size);
+                    entity.score += milestone.bonus;
+                    stats.score += milestone.bonus;
+
+                    showNotification(`🏆 ${milestone.name}`, { color: '#fbbf24', size: 44 });
+                    SoundManager.playMilestone();
+                    triggerScreenShake(5, 15);
+
+                    // Special effects based on milestone
+                    if (milestone.effect === 'flash') {
+                        spawnExplosion(entity.x, entity.y, '#fbbf24', 15);
+                    }
+                }
+            });
+        }
+
+        // ========================================
+        // KILL STREAK SYSTEM
+        // ========================================
+        function registerKill() {
+            const now = Date.now();
+
+            if (now - killStreak.lastKillTime < STREAK_CONFIG.window) {
+                killStreak.count++;
+            } else {
+                killStreak.count = 1;
+            }
+            killStreak.lastKillTime = now;
+
+            // Check for streak bonuses
+            const bonus = STREAK_CONFIG.bonuses.find(b => b.kills === killStreak.count);
+            if (bonus) {
+                showNotification(`🔥 ${bonus.name}`, { color: '#f97316', size: 38 });
+                SoundManager.playKillStreak(killStreak.count);
+                triggerScreenShake(8, 20);
+            }
+
+            return killStreak.count >= 2 ?
+                (STREAK_CONFIG.bonuses.find(b => b.kills <= killStreak.count)?.multiplier || 1) : 1;
+        }
+
+        // ========================================
+        // GAME LOOP
+        // ========================================
+        function startGameLoop() {
+            lobbyEl.classList.add('hidden');
+            gameContainerEl.classList.remove('hidden');
+            postgameEl.classList.add('hidden');
+
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+
+            // Reset stats
+            stats = { score: 0, orbsCollected: 0, playersAbsorbed: 0 };
+            gameStartTime = Date.now();
+            gameRunning = true;
+
+            // Initialize new systems
+            SoundManager.init();
+            milestoneReached = [];
+            killStreak = { count: 0, lastKillTime: 0 };
+            particles = [];
+            notifications = [];
+
+            // Initialize environmental hazards for solo mode
+            if (isSoloMode) {
+                initGauntlets();
+                predator = null;
+                predatorWarning = null;
+                predatorCooldown = Date.now() + 10000; // First predator after 10 seconds
+                dangerZone = null;
+                dangerZoneTimer = Date.now() + 15000; // First danger zone after 15 seconds
+                meteors = [];
+                meteorTimer = Date.now() + 20000; // First meteor after 20 seconds
+            }
+
+            // Input handlers
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('click', () => SoundManager.resume()); // Resume audio on user interaction
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+
+            // Reset velocity on game start
+            playerVelocity = { x: 0, y: 0 };
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            // Use device pixel ratio for crisp rendering
+            canvasDPR = window.devicePixelRatio || 1;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            canvas.width = width * canvasDPR;
+            canvas.height = height * canvasDPR;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+
+            ctx.scale(canvasDPR, canvasDPR);
+            ctx.imageSmoothingEnabled = false; // Crisp pixel rendering
+        }
+
+        function handleMouseMove(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+            }
+        }
+
+        function handleKeyDown(e) {
+            const key = e.key.toLowerCase();
+            if (key in keys) {
+                keys[key] = true;
+                e.preventDefault();
+            }
+        }
+
+        function handleKeyUp(e) {
+            const key = e.key.toLowerCase();
+            if (key in keys) {
+                keys[key] = false;
+            }
+        }
+
+        let lastMoveUpdate = 0;
+
+        let lastFrameTime = 0;
+
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+
+            // Calculate delta time
+            const deltaTime = lastFrameTime ? timestamp - lastFrameTime : 16;
+            lastFrameTime = timestamp;
+
+            // Check game time
+            const elapsed = Date.now() - gameStartTime;
+            if (elapsed >= GAME_DURATION) {
+                endGame();
+                return;
+            }
+
+            // Check session time for break reminders
+            checkBreakReminder();
+
+            // Update rift timers (protected)
+            try {
+                updateDimensionTimers(deltaTime);
+                updateRiftHUD();
+            } catch (e) {
+                console.error('Error in dimension timers:', e);
+            }
+
+            // Update and render (protected to prevent freeze)
+            try {
+                update(deltaTime);
+            } catch (e) {
+                console.error('Error in update:', e);
+            }
+
+            try {
+                render();
+            } catch (e) {
+                console.error('Error in render:', e);
+            }
+
+            try {
+                updateHUD(elapsed);
+            } catch (e) {
+                console.error('Error in HUD:', e);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(deltaTime) {
+            if (!localPlayer) return;
+
+            // Always check for respawns (even when dead)
+            if (isSoloMode && currentDimension === null) {
+                respawnEntities();
+            }
+
+            // Skip movement and collision updates if dead
+            if (!localPlayer.alive) return;
+
+            // Get current world dimensions and speed modifier
+            const worldSize = getCurrentWorldSize();
+            const speedMult = getDimensionSpeedMultiplier();
+
+            // Calculate base speed
+            const baseSpeed = Math.max(2, 8 - localPlayer.size * 0.05);
+            const speed = baseSpeed * speedMult;
+
+            // Calculate target velocity from keyboard (WASD) or mouse
+            let targetVelX = 0;
+            let targetVelY = 0;
+
+            // WASD keyboard control (takes priority)
+            const usingKeyboard = keys.w || keys.a || keys.s || keys.d;
+            if (usingKeyboard) {
+                let moveX = 0, moveY = 0;
+                if (keys.w) moveY -= 1;
+                if (keys.s) moveY += 1;
+                if (keys.a) moveX -= 1;
+                if (keys.d) moveX += 1;
+
+                // Normalize diagonal movement
+                const len = Math.sqrt(moveX * moveX + moveY * moveY);
+                if (len > 0) {
+                    moveX /= len;
+                    moveY /= len;
+                    targetVelX = moveX * speed;
+                    targetVelY = moveY * speed;
+                }
+            } else {
+                // Mouse control (fallback)
+                const targetWorldX = camera.x + mouseX;
+                const targetWorldY = camera.y + mouseY;
+                const dx = targetWorldX - localPlayer.x;
+                const dy = targetWorldY - localPlayer.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 5) {
+                    targetVelX = (dx / dist) * speed;
+                    targetVelY = (dy / dist) * speed;
+                }
+            }
+
+            // Smoothly interpolate velocity for fluid movement
+            playerVelocity.x += (targetVelX - playerVelocity.x) * VELOCITY_LERP;
+            playerVelocity.y += (targetVelY - playerVelocity.y) * VELOCITY_LERP;
+
+            // Apply damping when not actively moving
+            if (targetVelX === 0 && targetVelY === 0) {
+                playerVelocity.x *= VELOCITY_DAMP;
+                playerVelocity.y *= VELOCITY_DAMP;
+
+                // Stop completely when velocity is very small
+                if (Math.abs(playerVelocity.x) < 0.1) playerVelocity.x = 0;
+                if (Math.abs(playerVelocity.y) < 0.1) playerVelocity.y = 0;
+            }
+
+            // Apply velocity to position
+            localPlayer.x += playerVelocity.x;
+            localPlayer.y += playerVelocity.y;
+
+            // Clamp to current world bounds
+            localPlayer.x = Math.max(localPlayer.size, Math.min(worldSize.width - localPlayer.size, localPlayer.x));
+            localPlayer.y = Math.max(localPlayer.size, Math.min(worldSize.height - localPlayer.size, localPlayer.y));
+
+            // Send position update to server (throttled) - only in main world
+            if (isMultiplayer && socket && currentDimension === null && Date.now() - lastMoveUpdate > 50) {
+                socket.emit('playerMove', {
+                    roomId: currentRoom.id,
+                    x: localPlayer.x,
+                    y: localPlayer.y
+                });
+                lastMoveUpdate = Date.now();
+            }
+
+            // Update camera
+            camera.x = localPlayer.x - canvas.width / 2;
+            camera.y = localPlayer.y - canvas.height / 2;
+
+            // Dimension-specific updates
+            if (currentDimension !== null) {
+                updateDimensionBots();
+                checkDimensionCollisions();
+
+                // Apply dimension-specific mass decay to prevent unlimited growth
+                if (localPlayer.alive && localPlayer.size > DECAY_CONFIG.minSize) {
+                    const config = DIMENSION_CONFIGS[currentDimension];
+                    const decayMult = config.decayMult || 1;
+                    const sizeRatio = localPlayer.size / DECAY_CONFIG.minSize;
+                    const decayRate = DECAY_CONFIG.baseRate * decayMult * (1 + (sizeRatio - 1) * DECAY_CONFIG.sizeMultiplier);
+
+                    localPlayer.size -= decayRate;
+                    localPlayer.size = Math.max(DECAY_CONFIG.minSize, localPlayer.size);
+
+                    // Spawn decay particles for visual feedback
+                    if (Math.random() < DECAY_CONFIG.particleChance * decayMult && localPlayer.size > 20) {
+                        spawnDecayParticles(localPlayer, 1);
+                    }
+                }
+            }
+
+            // Solo mode updates (main world only)
+            if (isSoloMode && currentDimension === null) {
+                // Check rift entry
+                checkRiftEntry();
+
+                updateBots();
+                checkCollisions();
+
+                // Environmental hazards
+                updatePredator();
+                updateDangerZone();
+                updateMeteors();
+
+                // Mass decay for all entities
+                const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+                allEntities.forEach(entity => applyMassDecay(entity));
+
+                // Check for predator collisions
+                if (predator && predator.alive) {
+                    allEntities.forEach(entity => {
+                        const dx = entity.x - predator.x;
+                        const dy = entity.y - predator.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < predator.size * 0.8 && predator.size > entity.size * 1.1) {
+                            // Predator kills the entity
+                            entity.alive = false;
+                            entity.respawnTime = Date.now() + RESPAWN_TIME;
+                            spawnExplosion(entity.x, entity.y, entity.color, 15);
+
+                            if (entity.id === localPlayer.id) {
+                                SoundManager.playDeath();
+                                triggerScreenShake(15, 30);
+                                showNotification('💀 EATEN BY HUNTER!', { color: '#ef4444', size: 36 });
+                            }
+                        }
+                    });
+                }
+
+                // Check milestones
+                if (localPlayer.alive) {
+                    checkMilestones(localPlayer);
+                }
+            }
+
+            // Update particles and notifications
+            updateParticles();
+            updateNotifications();
+            updateScreenShake();
+
+            // Interpolate other players
+            players.forEach(player => {
+                if (player.id !== localPlayer.id && player.targetX !== undefined) {
+                    player.x += (player.targetX - player.x) * 0.15;
+                    player.y += (player.targetY - player.y) * 0.15;
+                }
+            });
+        }
+
+        function updateBots() {
+            const now = Date.now();
+
+            bots.forEach(bot => {
+                if (!bot.alive) return;
+
+                // Change target periodically
+                if (now > bot.changeTargetTime) {
+                    // Sometimes target nearest orb, sometimes random position
+                    if (Math.random() < 0.7) {
+                        const nearestOrb = findNearestOrb(bot);
+                        if (nearestOrb) {
+                            bot.targetX = nearestOrb.x;
+                            bot.targetY = nearestOrb.y;
+                        }
+                    } else {
+                        bot.targetX = Math.random() * WORLD_WIDTH;
+                        bot.targetY = Math.random() * WORLD_HEIGHT;
+                    }
+                    bot.changeTargetTime = now + 1000 + Math.random() * 2000;
+                }
+
+                // Move towards target
+                const speed = Math.max(1.5, 6 - bot.size * 0.04);
+                const dx = bot.targetX - bot.x;
+                const dy = bot.targetY - bot.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 5) {
+                    bot.x += (dx / dist) * speed;
+                    bot.y += (dy / dist) * speed;
+
+                    bot.x = Math.max(bot.size, Math.min(WORLD_WIDTH - bot.size, bot.x));
+                    bot.y = Math.max(bot.size, Math.min(WORLD_HEIGHT - bot.size, bot.y));
+                }
+            });
+        }
+
+        function findNearestOrb(entity) {
+            let nearest = null;
+            let nearestDist = Infinity;
+
+            orbs.forEach(orb => {
+                const dx = orb.x - entity.x;
+                const dy = orb.y - entity.y;
+                const dist = dx * dx + dy * dy;
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = orb;
+                }
+            });
+
+            return nearest;
+        }
+
+        function checkCollisions() {
+            const allEntities = [...players.filter(p => p.alive), ...bots.filter(b => b.alive)];
+
+            // Check orb collection
+            allEntities.forEach(entity => {
+                for (let i = orbs.length - 1; i >= 0; i--) {
+                    const orb = orbs[i];
+                    const dx = entity.x - orb.x;
+                    const dy = entity.y - orb.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < entity.size) {
+                        // Collect orb - use orb's value if set, otherwise default
+                        const orbValue = orb.value || 10;
+                        entity.size += orb.isGauntletOrb ? 2 : 1.5;
+                        entity.score += orbValue;
+
+                        if (entity.id === localPlayer.id) {
+                            stats.score = entity.score;
+                            stats.orbsCollected++;
+                            SoundManager.playCollect();
+                        }
+
+                        // Replace orb (unless it's a special orb)
+                        orbs.splice(i, 1);
+                        if (!orb.isGauntletOrb && !orb.isDangerOrb) {
+                            orbs.push(createOrb(Date.now()));
+                        }
+                    }
+                }
+            });
+
+            // Check entity vs entity collisions
+            for (let i = 0; i < allEntities.length; i++) {
+                for (let j = i + 1; j < allEntities.length; j++) {
+                    const a = allEntities[i];
+                    const b = allEntities[j];
+
+                    const dx = a.x - b.x;
+                    const dy = a.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // One must be significantly bigger to absorb
+                    if (dist < Math.max(a.size, b.size) * 0.8) {
+                        if (a.size > b.size * 1.1) {
+                            // Check if b is the local player and invulnerable
+                            if (b.id === localPlayer.id && isInvulnerable) {
+                                // Skip - player is invulnerable and cannot be absorbed
+                                continue;
+                            }
+                            absorbEntity(a, b);
+                        } else if (b.size > a.size * 1.1) {
+                            // Check if a is the local player and invulnerable
+                            if (a.id === localPlayer.id && isInvulnerable) {
+                                // Skip - player is invulnerable and cannot be absorbed
+                                continue;
+                            }
+                            absorbEntity(b, a);
+                        }
+                    }
+                }
+            }
+        }
+
+        function absorbEntity(absorber, absorbed) {
+            absorbed.alive = false;
+            absorbed.respawnTime = Date.now() + RESPAWN_TIME; // Quick 1.5 second respawn
+
+            // Visual explosion
+            spawnExplosion(absorbed.x, absorbed.y, absorbed.color, 12);
+
+            const sizeRatio = absorbed.size / absorber.size;
+            let scoreGain = Math.floor(50 * sizeRatio);
+
+            // Apply kill streak multiplier if absorber is the player
+            if (absorber.id === localPlayer.id) {
+                const multiplier = registerKill();
+                scoreGain = Math.floor(scoreGain * multiplier);
+
+                stats.score += scoreGain;
+                absorber.score += scoreGain;
+                stats.playersAbsorbed++;
+
+                SoundManager.playAbsorb();
+                triggerScreenShake(5, 10);
+            } else {
+                absorber.score += scoreGain;
+            }
+
+            absorber.size += absorbed.size * 0.3;
+
+            // If absorbed is local player, play death sound
+            if (absorbed.id === localPlayer.id) {
+                SoundManager.playDeath();
+                triggerScreenShake(12, 25);
+                showNotification('💀 ABSORBED!', { color: '#ef4444', size: 32 });
+            }
+        }
+
+        function respawnEntities() {
+            const now = Date.now();
+
+            // Get the correct world size based on current dimension
+            const worldSize = getCurrentWorldSize();
+
+            // Respawn player
+            players.forEach(player => {
+                if (!player.alive && player.respawnTime && now > player.respawnTime) {
+                    player.alive = true;
+                    // Respawn in the correct world (dimension or main)
+                    player.x = Math.random() * worldSize.width;
+                    player.y = Math.random() * worldSize.height;
+                    player.size = 20;
+                    player.respawnTime = null;
+
+                    if (player.id === localPlayer.id) {
+                        SoundManager.playRespawn();
+                        if (currentDimension !== null) {
+                            showNotification('🔄 RESPAWNED IN DIMENSION!', { color: '#86efac', size: 28 });
+                        } else {
+                            showNotification('🔄 RESPAWNED!', { color: '#86efac', size: 28 });
+                        }
+                    }
+                }
+            });
+
+            // Respawn bots (only in main world, not dimensions)
+            bots.forEach(bot => {
+                if (!bot.alive && bot.respawnTime && now > bot.respawnTime) {
+                    bot.alive = true;
+                    bot.x = Math.random() * WORLD_WIDTH;
+                    bot.y = Math.random() * WORLD_HEIGHT;
+                    bot.size = 15 + Math.random() * 10;
+                    bot.respawnTime = null;
+                }
+            });
+        }
+
+        function render() {
+            // Apply screen shake offset
+            const shake = getShakeOffset();
+
+            ctx.save();
+            ctx.translate(shake.x, shake.y);
+
+            // Clear canvas
+            ctx.fillStyle = '#1a1d2e';
+            ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+
+            // Draw dimension background if in a dimension
+            if (currentDimension !== null) {
+                drawDimensionBackground();
+            }
+
+            // Draw grid
+            drawGrid();
+
+            // Draw rifts (main world only)
+            if (currentDimension === null && isSoloMode) {
+                drawRifts();
+            }
+
+            // Draw gauntlet passages (behind orbs) - main world only
+            if (isSoloMode && currentDimension === null) {
+                renderGauntlets();
+            }
+
+            // Draw danger zone (behind orbs) - main world only
+            if (isSoloMode && currentDimension === null) {
+                renderDangerZone();
+            }
+
+            // Draw meteor warnings - main world only
+            if (isSoloMode && currentDimension === null) {
+                renderMeteors();
+            }
+
+            // Draw dimension orbs if in a dimension
+            if (currentDimension !== null) {
+                drawDimensionOrbs();
+            }
+
+            // Draw orbs (main world only when not in dimension)
+            if (currentDimension === null) {
+                orbs.forEach(orb => {
+                    const screenX = orb.x - camera.x;
+                    const screenY = orb.y - camera.y;
+
+                    if (screenX > -50 && screenX < canvas.width + 50 &&
+                        screenY > -50 && screenY < canvas.height + 50) {
+                        ctx.beginPath();
+                        ctx.arc(screenX, screenY, orb.size, 0, Math.PI * 2);
+                        ctx.fillStyle = orb.color;
+                        ctx.fill();
+
+                        // Subtle glow (enhanced for special orbs)
+                        ctx.beginPath();
+                        const glowSize = orb.isGauntletOrb || orb.isDangerOrb ? orb.size + 6 : orb.size + 3;
+                        ctx.arc(screenX, screenY, glowSize, 0, Math.PI * 2);
+                        ctx.fillStyle = orb.color + (orb.isGauntletOrb ? '66' : '33');
+                        ctx.fill();
+                    }
+                });
+            }
+
+            // Draw particles (behind entities)
+            renderParticles();
+
+            // Draw all entities (players and bots) - include dimension bots when in dimension
+            let allEntities;
+            if (currentDimension !== null) {
+                allEntities = [...players, ...dimensionBots];
+            } else {
+                allEntities = [...players, ...bots];
+            }
+            allEntities.sort((a, b) => a.size - b.size); // Draw smaller ones first
+
+            allEntities.forEach(entity => {
+                if (!entity.alive) return;
+
+                const screenX = entity.x - camera.x;
+                const screenY = entity.y - camera.y;
+
+                if (screenX > -100 && screenX < canvas.width + 100 &&
+                    screenY > -100 && screenY < canvas.height + 100) {
+
+                    // Breathing animation - subtle size pulsing
+                    const entityHash = entity.id.split('_').reduce((a, c) => a + c.charCodeAt(0), 0);
+                    const breathe = 1 + Math.sin(Date.now() * 0.003 + entityHash) * 0.025;
+                    const visualSize = entity.size * breathe;
+
+                    // Motion trail for local player when moving
+                    if (entity.id === localPlayer.id &&
+                        (Math.abs(playerVelocity.x) > 1 || Math.abs(playerVelocity.y) > 1)) {
+                        createParticle(entity.x, entity.y, {
+                            size: entity.size * 0.25,
+                            color: entity.color + '33',
+                            life: 0.25,
+                            decay: 0.04,
+                            vx: -playerVelocity.x * 0.1,
+                            vy: -playerVelocity.y * 0.1
+                        });
+                    }
+
+                    // Invulnerability glow effect for local player
+                    if (entity.id === localPlayer.id && isInvulnerable) {
+                        const invulnGradient = ctx.createRadialGradient(
+                            screenX, screenY, entity.size,
+                            screenX, screenY, entity.size * 1.8
+                        );
+                        invulnGradient.addColorStop(0, '#67e8f9aa');
+                        invulnGradient.addColorStop(0.5, '#67e8f966');
+                        invulnGradient.addColorStop(1, '#67e8f900');
+
+                        ctx.beginPath();
+                        ctx.arc(screenX, screenY, entity.size * 1.8, 0, Math.PI * 2);
+                        ctx.fillStyle = invulnGradient;
+                        ctx.fill();
+                    }
+
+                    // Outer glow
+                    const gradient = ctx.createRadialGradient(
+                        screenX, screenY, visualSize * 0.5,
+                        screenX, screenY, visualSize * 1.3
+                    );
+                    gradient.addColorStop(0, entity.color + 'aa');
+                    gradient.addColorStop(1, entity.color + '00');
+
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, visualSize * 1.3, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Main orb
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, visualSize, 0, Math.PI * 2);
+                    ctx.fillStyle = entity.color;
+                    ctx.fill();
+
+                    // Inner highlight
+                    ctx.beginPath();
+                    ctx.arc(screenX - visualSize * 0.2, screenY - visualSize * 0.2, visualSize * 0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fill();
+
+                    // Mass decay ring indicator (for local player when decaying)
+                    if (entity.id === localPlayer.id && entity.size > DECAY_CONFIG.minSize + 5) {
+                        const decayProgress = (entity.size - DECAY_CONFIG.minSize) / (100 - DECAY_CONFIG.minSize);
+                        ctx.beginPath();
+                        ctx.arc(screenX, screenY, entity.size + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * decayProgress);
+                        ctx.strokeStyle = 'rgba(134, 239, 172, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // Crown for milestone achievement
+                    if (entity.id === localPlayer.id && milestoneReached.includes(100)) {
+                        ctx.font = `${Math.max(16, entity.size * 0.3)}px sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('👑', screenX, screenY - entity.size - 5);
+                    }
+
+                    // Name label
+                    ctx.font = '600 14px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.fillText(entity.name, screenX, screenY + entity.size + 18);
+                }
+            });
+
+            // Draw predator (on top of entities)
+            if (isSoloMode) {
+                renderPredator();
+            }
+
+            // Draw world boundary indicator when near edge
+            drawBoundaryIndicator();
+
+            ctx.restore(); // End screen shake transform
+
+            // Draw UI overlays (not affected by screen shake)
+            renderNotifications();
+
+            // Draw respawn countdown if dead
+            if (localPlayer && !localPlayer.alive && localPlayer.respawnTime) {
+                const timeLeft = Math.max(0, localPlayer.respawnTime - Date.now());
+                const seconds = (timeLeft / 1000).toFixed(1);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect(canvas.width / 2 - 120, canvas.height / 2 - 50, 240, 100);
+
+                ctx.font = 'bold 24px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#f472b6';
+                ctx.fillText('RESPAWNING...', canvas.width / 2, canvas.height / 2 - 10);
+                ctx.font = 'bold 32px Inter, sans-serif';
+                ctx.fillStyle = '#86efac';
+                ctx.fillText(seconds + 's', canvas.width / 2, canvas.height / 2 + 30);
+            }
+
+            // Draw kill streak indicator
+            if (killStreak.count >= 2 && Date.now() - killStreak.lastKillTime < 3000) {
+                ctx.font = 'bold 20px Inter, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#f97316';
+                ctx.fillText(`🔥 ${killStreak.count}x STREAK`, 20, canvas.height - 30);
+            }
+        }
+
+        function drawGrid() {
+            const gridSize = 50;
+            ctx.strokeStyle = '#252836';
+            ctx.lineWidth = 1;
+
+            const startX = Math.floor(camera.x / gridSize) * gridSize - camera.x;
+            const startY = Math.floor(camera.y / gridSize) * gridSize - camera.y;
+
+            for (let x = startX; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = startY; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawBoundaryIndicator() {
+            const padding = 50;
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 3;
+
+            // Left boundary
+            if (camera.x < padding) {
+                const x = -camera.x;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Right boundary
+            if (camera.x + canvas.width > WORLD_WIDTH - padding) {
+                const x = WORLD_WIDTH - camera.x;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Top boundary
+            if (camera.y < padding) {
+                const y = -camera.y;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Bottom boundary
+            if (camera.y + canvas.height > WORLD_HEIGHT - padding) {
+                const y = WORLD_HEIGHT - camera.y;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function updateHUD(elapsed) {
+            // Score
+            scoreEl.textContent = `Score: ${stats.score}`;
+
+            // Timer
+            const remaining = Math.max(0, GAME_DURATION - elapsed);
+            const mins = Math.floor(remaining / 60000);
+            const secs = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = `Time: ${mins}:${secs.toString().padStart(2, '0')}`;
+
+            // Progress to next milestone
+            const milestone = Math.ceil(stats.score / 100) * 100;
+            const progress = ((stats.score % 100) / 100) * 100;
+            progressFillEl.style.width = `${progress}%`;
+            pointsNeededEl.textContent = milestone - stats.score;
+
+            // Leaderboard
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            const allEntities = [...players, ...bots].filter(e => e.alive);
+            allEntities.sort((a, b) => b.score - a.score);
+            const top5 = allEntities.slice(0, 5);
+
+            topPlayersEl.innerHTML = '';
+            top5.forEach((entity, index) => {
+                const li = document.createElement('li');
+                if (entity.id === localPlayer.id) {
+                    li.className = 'local-player';
+                }
+                li.innerHTML = `
+                    <span class="rank">${index + 1}.</span>
+                    <span class="name">${entity.name}</span>
+                    <span class="score">${entity.score}</span>
+                `;
+                topPlayersEl.appendChild(li);
+            });
+        }
+
+        function checkBreakReminder() {
+            const sessionTime = Date.now() - sessionStartTime;
+
+            if (sessionTime >= BREAK_REMINDER_2 && !breakReminderShown[30]) {
+                breakReminderShown[30] = true;
+                showBreakReminder(30);
+            } else if (sessionTime >= BREAK_REMINDER_1 && !breakReminderShown[15]) {
+                breakReminderShown[15] = true;
+                showBreakReminder(15);
+            }
+        }
+
+        function showBreakReminder(minutes) {
+            sessionTimeEl.textContent = minutes;
+            sessionReminderEl.classList.remove('hidden');
+            gameRunning = false;
+        }
+
+        function continueSession() {
+            sessionReminderEl.classList.add('hidden');
+            gameRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endSession() {
+            endGame();
+        }
+
+        function endGame() {
+            gameRunning = false;
+
+            // Calculate final rank
+            const allEntities = [...players, ...bots];
+            allEntities.sort((a, b) => b.score - a.score);
+            const rank = allEntities.findIndex(e => e.id === localPlayer.id) + 1;
+
+            const elapsed = Date.now() - gameStartTime;
+            const mins = Math.floor(elapsed / 60000);
+            const secs = Math.floor((elapsed % 60000) / 1000);
+
+            showPostGame({
+                finalScore: stats.score,
+                orbsCollected: stats.orbsCollected,
+                playersAbsorbed: stats.playersAbsorbed,
+                rank: rank,
+                duration: `${mins}:${secs.toString().padStart(2, '0')}`
+            });
+        }
+
+        function showPostGame(data) {
+            gameContainerEl.classList.add('hidden');
+            postgameEl.classList.remove('hidden');
+
+            document.getElementById('final-score').textContent = data.finalScore || stats.score;
+            document.getElementById('orbs-collected').textContent = data.orbsCollected || stats.orbsCollected;
+            document.getElementById('players-absorbed').textContent = data.playersAbsorbed || stats.playersAbsorbed;
+            document.getElementById('final-rank').textContent = data.rank ? `#${data.rank}` : '-';
+            document.getElementById('game-duration').textContent = data.duration || '0:00';
+
+            // Rift statistics
+            document.getElementById('rifts-used').textContent = riftStats.riftsUsed;
+            document.getElementById('dimension-orbs').textContent = riftStats.dimensionOrbs;
+        }
+
+        function playAgain() {
+            postgameEl.classList.add('hidden');
+
+            if (isSoloMode) {
+                initSoloGame(localPlayer.name);
+            } else if (isMultiplayer && currentRoom) {
+                // Request new game from server
+                socket.emit('requestNewGame', { roomId: currentRoom.id });
+            } else {
+                exitGame();
+            }
+        }
+
+        function exitGame() {
+            gameRunning = false;
+            isSoloMode = false;
+            currentRoom = null;
+            localPlayer = null;
+            players = [];
+            bots = [];
+            orbs = [];
+
+            postgameEl.classList.add('hidden');
+            gameContainerEl.classList.add('hidden');
+            lobbyEl.classList.remove('hidden');
+            modeSelectionEl.classList.remove('hidden');
+            playerListEl.classList.add('hidden');
+
+            // Reset session tracking
+            sessionStartTime = Date.now();
+            breakReminderShown = { 15: false, 30: false };
+        }
+
+        // ========================================
+        // INITIALIZATION
+        // ========================================
+        window.onload = () => {
+            initSocket();
+        };
+    </script>
+</body>
+
+</html>
