@@ -1,221 +1,114 @@
 # Orb Battle.io
 
-A real-time multiplayer HTML5 game built with WebSockets. Collect orbs, grow bigger, and compete against other players in a fast-paced arena.
+A premium, fast-paced HTML5 action game built with **Phaser 3**. Collect orbs, grow your mass, and outmaneuver opponents in a dynamic arena filled with dimensional rifts and environmental hazards.
 
-![Game Preview](https://via.placeholder.com/800x400?text=Orb+Battle.io)
+![Orb Battle.io Preview](https://via.placeholder.com/800x400?text=Orb+Battle.io+Gameplay)
 
-## Features
+## 🌌 Overview
 
-### Gameplay
-- **Collect Orbs**: Gather orbs to increase your size and score (+10 points each)
-- **Absorb Players**: Consume smaller players to grow faster (+50 points × size ratio)
-- **Real-time Multiplayer**: Compete with up to 10 players per room
-- **Bot AI**: 8 intelligent bots fill empty spaces for action-packed gameplay
-- **5-Minute Matches**: Quick games with clear winners
+Orb Battle.io takes the classic "grow-to-win" mechanic and elevates it with advanced AI, multiple dimensions, and deep visual progression. Whether playing solo against learning bots or competing in a future multiplayer setup, the gameplay is designed to be smooth, rewarding, and visually stunning.
 
-### Healthy Engagement Design
-This game is designed with player wellbeing in mind:
-- **Fixed-Ratio Rewards**: Predictable scoring (orb = +10, always)
-- **Session Reminders**: Friendly break suggestions at 15 and 30 minutes
-- **Transparent Progress**: Clear milestones and progress indicators
-- **No Punishment for Stopping**: Take breaks anytime without penalty
+## ✨ Key Features
 
-### Technical Features
-- Single HTML file (embeddable anywhere)
-- WebSocket multiplayer with Socket.IO
-- Solo mode fallback (works without server)
-- 60 FPS smooth canvas rendering
-- Mobile-responsive with touch support
+### 🎮 Gameplay Mechanics
+- **Dimensional Rifts**: Discover 4 unique dimensions (Feast, Anti-Gravity, Mirror Maze, Speed Zone), each with its own physics, visuals, and scoring bonuses.
+- **Advanced Bot AI**: Experience challenging gameplay against bots powered by **Q-Learning**, capable of threat detection, prey chasing, and strategic fleeing.
+- **Timed Mode & Time Orbs**: Race against the clock in 3-minute matches. Collect rare Time Orbs to extend your stay and rack up massive scores.
+- **Combo System**: Build multipliers by collecting orbs in quick succession.
+- **Environmental Hazards**: Evade the **Predator NPC**, navigate **Danger Zones**, and dodge **Meteor Showers** to survive.
+- **Gauntlet Passages**: High-risk, high-reward narrow paths accessible only to smaller orbs.
+
+### 🎨 Visuals & UX
+- **Dynamic Visual Progression**: Your orb evolves visually as it grows, adding layers, trails, and energy patterns.
+- **High-Performance Rendering**: Built on Phaser 3 for 60 FPS smooth canvas rendering with antialiasing and high-DPI support.
+- **Premium Aesthetics**: Sleek dark mode design using the **Inter** typeface and a curated color palette.
+- **Responsive Controls**: Fluid movement using **WASD** or **Arrow keys**.
+
+### 🛠 Technical Stack
+- **Engine**: Phaser 3 (Arcade Physics).
+- **Core**: Vanilla JavaScript (ES6 Modules).
+- **Styling**: Vanilla CSS3.
+- **Backend**: Node.js, Express, Socket.IO (for multiplayer connectivity).
+- **AI**: Q-Learning implementation for bot behavior.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-### Play Solo (No Server Needed)
-1. Open `client.html` in any modern browser
-2. Click "Play Solo (Bots Only)"
-3. Have fun!
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v16.0.0 or higher)
+- npm (comes with Node)
 
-### Play Multiplayer
-
-#### Step 1: Deploy the Server
-
-**Option A: Deploy to Render.com (Free)**
-1. Create account at [render.com](https://render.com)
-2. Click "New" → "Web Service"
-3. Connect your GitHub repo or upload files directly
-4. Set build command: `npm install`
-5. Set start command: `npm start`
-6. Copy your URL (e.g., `https://orb-battle-xyz.onrender.com`)
-
-**Option B: Deploy to Railway.app (Free)**
-1. Create account at [railway.app](https://railway.app)
-2. Click "New Project" → "Deploy from GitHub"
-3. Select your repo with server files
-4. Railway auto-detects Node.js and deploys
-5. Copy your URL from the deployment
-
-**Option C: Deploy to Glitch.com (Free)**
-1. Go to [glitch.com](https://glitch.com)
-2. Click "New Project" → "Import from GitHub"
-3. Paste your repo URL
-4. Copy your URL (e.g., `https://orb-battle.glitch.me`)
-
-**Option D: Run Locally**
-```bash
-cd /path/to/orb-battle-io
-npm install
-npm start
-# Server runs at http://localhost:3000
-```
-
-#### Step 2: Configure the Client
-
-1. Open `client.html` in a text editor
-2. Find line ~50: `const SERVER_URL = 'REPLACE_WITH_YOUR_SERVER_URL';`
-3. Replace with your server URL:
-   ```javascript
-   const SERVER_URL = 'https://your-server.onrender.com';
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/orb-battle-io.git
+   cd orb-battle-io
    ```
-4. Save the file
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-#### Step 3: Embed in Google Sites
+### Running the Project
+The project includes a Node.js server to handle multiplayer logic and serve the static files:
 
-1. Open your Google Site
-2. Click **Insert** → **Embed**
-3. Select **Embed code** tab
-4. Paste the entire contents of `client.html`
-5. Click **Next** → **Insert**
-6. Resize the embed as needed
-
----
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `client.html` | Complete game (HTML + CSS + JavaScript) |
-| `server.js` | WebSocket multiplayer server |
-| `package.json` | Server dependencies |
-| `README.md` | This documentation |
+1. Start the server:
+   ```bash
+   npm start
+   ```
+2. Open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
 
 ---
 
-## How to Play
+## 🕹 How to Play
 
 ### Controls
-- **Mouse/Touch**: Move your orb towards the cursor
-- **Goal**: Collect orbs and absorb smaller players
+- **WASD / Arrow Keys**: Move your orb.
+- **Goal**: Collect orbs to grow. Absorb smaller players/bots (at least 10% smaller than you).
 
-### Scoring
-| Action | Points |
-|--------|--------|
-| Collect Orb | +10 |
-| Absorb Player | +50 × (their size / your size) |
-| Survival | +1 per 10 seconds |
-| Size Milestone | +25 bonus every 10 size units |
+### Dimensional Rifts
+Step into rifts to enter specialized dimensions:
+- **🟢 Feast**: High orb density, fast growth.
+- **🟣 Anti-Gravity**: Float with low-friction physics and high orb bonuses.
+- **💗 Mirror Maze**: Navigate a confined labyrinth with high-value orbs.
+- **🟡 Speed Zone**: Everything moves at 2x speed. Extreme risk/reward.
 
-### Rules
-- You can only absorb players/bots 10% smaller than you
-- When absorbed, you respawn after 3 seconds
-- Match lasts 5 minutes
-- Highest score wins!
+### Scoring & Progression
+- **Collect Orb**: +10 points (base).
+- **Absorb Entity**: +50 base points + mass gain.
+- **Combos**: Each orb collected within 1.5s increases your multiplier (up to 3.0x).
+- **Milestones**: Reach 30, 50, 75, and 100 size for major score bonuses and visual upgrades.
 
 ---
 
-## Troubleshooting
+## 📂 Project Structure
 
-### "Could not connect to server"
-- Check that your server URL is correct
-- Ensure the server is running (visit URL in browser)
-- Try the "Play Solo" mode as a fallback
-
-### Game runs slow
-- Close other browser tabs
-- Reduce browser window size
-- Check your internet connection (for multiplayer)
-
-### Room code not working
-- Room codes are 6 characters, all uppercase
-- Rooms expire when all players leave
-- Game may have already started
-
-### Server won't start
-```bash
-# Check Node.js version (need 16+)
-node --version
-
-# Reinstall dependencies
-rm -rf node_modules
-npm install
-
-# Check for port conflicts
-lsof -i :3000
+```text
+Orb.io/
+├── assets/             # Game images and audio
+├── js/
+│   ├── ai/             # Bot Q-Learning logic
+│   ├── entities/       # Player, Bot, and Orb classes
+│   ├── managers/       # Sound and Game management
+│   ├── scenes/         # Phaser scenes (Boot, Menu, Game, UI, PostGame)
+│   ├── config.js       # Central game constants
+│   └── main.js         # Phaser entry point
+├── server.js           # Socket.IO & Express server
+├── index.html          # Main entry file
+├── styles.css          # Game UI styling
+└── README.md           # Documentation
 ```
 
 ---
 
-## Server API
+## 📜 License
 
-### Health Check
-```
-GET /
-GET /health
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### WebSocket Events
-
-**Client → Server:**
-- `createRoom` - Create a new game room
-- `joinRoom` - Join existing room by code
-- `quickMatch` - Join any available room
-- `startGame` - Host starts the game
-- `playerMove` - Send position update
-- `leaveRoom` - Leave current room
-
-**Server → Client:**
-- `roomCreated` - Room successfully created
-- `roomJoined` - Successfully joined room
-- `playerJoined` - New player joined
-- `playerLeft` - Player left room
-- `gameStarted` - Game has begun
-- `playerMoved` - Another player moved
-- `orbCollected` - Orb was collected
-- `playerAbsorbed` - Player was absorbed
-- `gameEnded` - Game finished with rankings
-
----
-
-## Configuration
-
-Edit these values in `server.js`:
-
-```javascript
-const CONFIG = {
-    maxPlayersPerRoom: 10,     // Max players per room
-    minPlayersToStart: 1,      // Min players to start game
-    gameDuration: 5 * 60000,   // Game length (5 min)
-    worldWidth: 2000,          // Arena width
-    worldHeight: 2000,         // Arena height
-    initialOrbCount: 100,      // Starting orbs
-    botCount: 8,               // AI bots
-    tickRate: 20,              // Server updates/sec
-    orbValue: 10,              // Points per orb
-    absorptionBaseValue: 50    // Base absorption points
-};
-```
-
----
-
-## License
-
-MIT License - Feel free to modify and share!
-
----
-
-## Credits
-
-Built with ❤️ using:
-- [Socket.IO](https://socket.io/) - Real-time WebSocket library
-- [Express](https://expressjs.com/) - Web server framework
-- [Inter Font](https://rsms.me/inter/) - Beautiful typography
+## 🙏 Credits
+- Built with ❤️ using [Phaser 3](https://phaser.io/).
+- Fonts by [Google Fonts (Inter)](https://fonts.google.com/specimen/Inter).
