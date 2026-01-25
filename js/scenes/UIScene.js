@@ -59,10 +59,6 @@ export class UIScene extends Phaser.Scene {
                 </div>
                 <div class="rift-bonus">BONUS: <span id="hud-orb-mult">1.5x</span></div>
             </div>
-            <div id="hud-rift-cooldown" class="rift-cooldown hidden">
-                <span class="cooldown-label">Rift Ready In</span>
-                <span class="cooldown-timer" id="hud-cooldown">8s</span>
-            </div>
         `;
         container.appendChild(this.scorePanel);
 
@@ -202,14 +198,6 @@ export class UIScene extends Phaser.Scene {
             if (orbMultEl) orbMultEl.textContent = config.orbBonus + 'x';
         } else {
             riftStatusEl?.classList.add('hidden');
-        }
-
-        if (gs.riftCooldown > 0 && gs.currentDimension === null) {
-            riftCooldownEl?.classList.remove('hidden');
-            const cooldownTimerEl = document.getElementById('hud-cooldown');
-            if (cooldownTimerEl) cooldownTimerEl.textContent = Math.ceil(gs.riftCooldown / 1000) + 's';
-        } else {
-            riftCooldownEl?.classList.add('hidden');
         }
 
         // Invulnerability

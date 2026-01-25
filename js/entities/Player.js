@@ -376,7 +376,9 @@ export class Player extends Phaser.GameObjects.Container {
      * Set player size
      */
     setSize(newSize) {
-        this.playerSize = Math.max(CONFIG.MIN_SIZE, newSize);
+        // Enforce max size cap if defined
+        const maxSize = CONFIG.MAX_PLAYER_SIZE || 1000;
+        this.playerSize = Phaser.Math.Clamp(newSize, CONFIG.MIN_SIZE, maxSize);
         this.updateVisuals();
     }
 
@@ -384,7 +386,13 @@ export class Player extends Phaser.GameObjects.Container {
      * Grow player by amount
      */
     grow(amount) {
-        this.setSize(this.playerSize + amount);
+        // Diminishing returns: The bigger you are, the harder it is to grow
+        // 100% gain at start (20 size) -> 50% gain at size 100 -> 20% gain at size 300
+        const sizeFactor = Math.max(0, this.playerSize - CONFIG.INITIAL_SIZE);
+        const diminishingMult = 1 / (1 + sizeFactor * 0.015);
+
+        const effectiveAmount = amount * diminishingMult;
+        this.setSize(this.playerSize + effectiveAmount);
     }
 
     /**

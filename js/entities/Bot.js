@@ -254,7 +254,7 @@ export class Bot extends Player {
         if (!this.alive) return;
 
         const now = Date.now();
-        const decisionInterval = CONFIG.BOT_AI?.DECISION_INTERVAL || 500;
+        const decisionInterval = CONFIG.BOT_AI?.DECISION_INTERVAL || 300;
 
         // Make new decision at intervals
         if (now - this.lastDecisionTime > decisionInterval) {
@@ -268,8 +268,20 @@ export class Bot extends Player {
                     this.executeAction(BotAction.FLEE, worldWidth, worldHeight);
                 }
             } else {
-                // Get action from brain
-                const action = this.brain.decide(newState);
+                // Get action from brain or override with heuristic
+                // Heuristic: If we are big and see a small player, chase them!
+                let action = this.brain.decide(newState);
+
+                // Override: Aggressive chasing if we have size advantage
+                if (newState === BotState.NEAR_PREY && Math.random() < 0.8) {
+                    action = BotAction.CHASE_ENTITY;
+                }
+
+                // Override: Dynamic wandering if safe
+                if (newState === BotState.SAFE_ALONE && Math.random() < 0.3) {
+                    this.targetX = this.x + (Math.random() - 0.5) * 500;
+                    this.targetY = this.y + (Math.random() - 0.5) * 500;
+                }
 
                 // Execute selected action
                 this.executeAction(action, worldWidth, worldHeight);
@@ -288,10 +300,14 @@ export class Bot extends Player {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 5) {
-            // Speed boost when fleeing
-            const speedMult = this.aiMode === 'flee' ? 1.2 : 1.0;
-            this.x += (dx / dist) * speed * speedMult;
-            this.y += (dy / dist) * speed * speedMult;
+            // Speed boost when fleeing or chasing
+            const speedMult = (this.aiMode === 'flee' || this.aiMode === 'chase_entity') ? 1.2 : 1.0;
+
+            // Add organic sine wave movement to make it look less robotic
+            const wobble = Math.sin(now / 200) * 0.5;
+
+            this.x += (dx / dist + wobble * 0.1) * speed * speedMult;
+            this.y += (dy / dist - wobble * 0.1) * speed * speedMult;
 
             // Clamp to world bounds
             this.clampToWorld(worldWidth, worldHeight);
@@ -333,7 +349,21 @@ export class Bot extends Player {
             x !== undefined ? x : Math.random() * worldWidth,
             y !== undefined ? y : Math.random() * worldHeight
         );
-        this.setSize(CONFIG.BOT_MIN_SIZE + Math.random() * 10); // Smaller on respawn
+
+        // Dynamic Difficulty: New bots scale with the player to keep challenge high
+        let spawnSizeMin = CONFIG.BOT_MIN_SIZE;
+        let spawnSizeMax = CONFIG.BOT_MIN_SIZE + 10;
+
+        if (this.scene.localPlayer && this.scene.localPlayer.active) {
+            // Scale up based on player size (e.g. if player is size 100, bots can spawn up to size 60)
+            const playerSize = this.scene.localPlayer.playerSize;
+            if (playerSize > 40) {
+                spawnSizeMin = Math.min(playerSize * 0.4, 60);
+                spawnSizeMax = Math.min(playerSize * 0.8, 100);
+            }
+        }
+
+        this.setSize(spawnSizeMin + Math.random() * (spawnSizeMax - spawnSizeMin));
         this.setVisible(true);
 
         // Reset AI

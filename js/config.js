@@ -17,6 +17,7 @@ export const CONFIG = {
     // Player
     INITIAL_SIZE: 20,
     MIN_SIZE: 15,
+    MAX_PLAYER_SIZE: 300, // Hard cap to prevent issues
     BASE_SPEED: 8,
     SIZE_SPEED_FACTOR: 0.05,
 
@@ -24,12 +25,13 @@ export const CONFIG = {
     INITIAL_ORB_COUNT: 100,
     ORB_MIN_SIZE: 8,
     ORB_MAX_SIZE: 14,
-    ORB_VALUE: 10,
+    ORB_VALUE: 25,
+
 
     // Bots
     BOT_COUNT: 8,
     BOT_MIN_SIZE: 15,
-    BOT_MAX_SIZE: 35,
+    BOT_MAX_SIZE: 30,
     BOT_NAMES: ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'],
 
     // Colors
@@ -38,16 +40,17 @@ export const CONFIG = {
 
     // Absorption
     SIZE_RATIO_TO_ABSORB: 1.1,
-    ABSORPTION_SIZE_GAIN: 0.3,
+    ABSORPTION_SIZE_GAIN: 0.5,
+
     ABSORPTION_BASE_SCORE: 50,
     RESPAWN_TIME: 1500, // 1.5 seconds
 
     // Mass Decay
     DECAY: {
-        baseRate: 0.02,
-        sizeMultiplier: 2.5,
-        minSize: 15,
-        particleChance: 0.15
+        baseRate: 0, // Disabled
+        sizeMultiplier: 0,
+        minSize: 9999, // Effectively disabled
+        particleChance: 0
     },
 
     // Dimensional Rifts
@@ -65,10 +68,10 @@ export const CONFIG = {
         FEAST: {
             name: 'Feast',
             worldSize: 1000,
-            orbCount: 150,
+            orbCount: 130, // Reduced from 150
             speedMult: 1,
             orbBonus: 1.5,
-            decayMult: 1.5,
+            decayMult: 1.4, // Reduced from 1.5
             color: 0x86efac,
             colorHex: '#86efac',
             bots: 4,
@@ -78,7 +81,7 @@ export const CONFIG = {
             name: 'Anti-Gravity',
             worldSize: 1500,
             orbCount: 80,
-            speedMult: 0.35,
+            speedMult: 0.45, // Increased from 0.35
             orbBonus: 2.0,
             decayMult: 0.5,
             color: 0xa78bfa,
@@ -89,7 +92,7 @@ export const CONFIG = {
         MIRROR_MAZE: {
             name: 'Mirror Maze',
             worldSize: 800,
-            orbCount: 60,
+            orbCount: 80, // Increased from 60
             speedMult: 1,
             orbBonus: 1.75,
             decayMult: 1.25,
@@ -105,7 +108,7 @@ export const CONFIG = {
             orbCount: 100,
             speedMult: 2,
             orbBonus: 1.5,
-            decayMult: 2.0,
+            decayMult: 1.7, // Reduced from 2.0
             color: 0xfbbf24,
             colorHex: '#fbbf24',
             bots: 3,
@@ -178,7 +181,7 @@ export const CONFIG = {
         THREAT_DETECTION_RADIUS: 200,
 
         // Size thresholds for behavior changes
-        SIZE_ADVANTAGE_RATIO: 1.15,      // When bot is 15% bigger, it will chase
+        SIZE_ADVANTAGE_RATIO: 1.1,       // When bot is 10% bigger, it will chase
         SIZE_DISADVANTAGE_RATIO: 0.85,   // When bot is 15% smaller, it will flee
 
         // Q-Learning parameters
@@ -193,7 +196,7 @@ export const CONFIG = {
         SURVIVAL_REWARD: 1,
 
         // Timing
-        DECISION_INTERVAL: 500,          // How often bots make decisions (ms)
+        DECISION_INTERVAL: 300,          // How often bots make decisions (ms)
         FLEE_DURATION: 3000              // How long to flee after spotting threat
     },
 
